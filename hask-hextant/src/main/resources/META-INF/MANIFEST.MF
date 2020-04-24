@@ -1,0 +1,2 @@
+Plugin-Initializer: HaskPlugin
+Main-Class: hask.hextant.main.HaskEditorApplication

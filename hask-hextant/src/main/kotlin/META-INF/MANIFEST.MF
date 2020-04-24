@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Main-Class: hask.hextant.main.HaskEditorApplication
+Plugin-Initializer: HaskPlugin

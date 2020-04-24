@@ -1,0 +1,40 @@
+.hextant-text.identifier {
+    -fx-text-fill: purple;
+}
+
+.hextant-text {
+    -fx-font-size: 15 !important;
+}
+
+.hextant-text.int-literal {
+    -fx-text-fill: #FFB3CC;
+}
+
+.hextant-text.reference {
+    -fx-text-fill: #6D9FFF;
+}
+
+.let {
+    -fx-border-width: 1;
+    -fx-border-color: purple;
+}
+
+.lambda {
+    -fx-border-width: 1;
+    -fx-border-color: orange;
+}
+
+.apply {
+    -fx-border-width: 1;
+    -fx-border-color: green;
+}
+
+:highlight {
+    -fx-background-color: #234309 !important;
+}
+
+:refactoring {
+    -fx-background-color: #1336FF !important;
+    -fx-border-width: 1 !important;
+    -fx-border-color: FF0010 !important;
+}
