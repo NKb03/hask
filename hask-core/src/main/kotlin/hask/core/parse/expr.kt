@@ -5,6 +5,7 @@
 package hask.core.parse
 
 import hask.core.ast.Expr
+import hask.core.ast.Expr.Binding
 
 val single: Parser<Token, Expr> = doParse {
     when (val tok = next()) {
@@ -34,12 +35,18 @@ val id: Parser<Token, String> = doParse {
 
 val let: Parser<Token, Expr> = doParse {
     expect("'let'") { it is Token.Let }
-    val name = id()
-    expect("'='") { it is Token.Assign }
-    val value = expr()
+    val bindings = mutableListOf<Binding>()
+    while (true) {
+        val name = id()
+        expect("'='") { it is Token.Assign }
+        val value = expr()
+        bindings.add(Binding(name, value))
+        if (next() !is Token.Comma) break
+        consume()
+    }
     expect("'in'") { it is Token.In }
     val body = expr()
-    success(Expr.Let(name, value, body))
+    success(Expr.Let(bindings, body))
 }
 
 val lambda: Parser<Token, Expr> = doParse {
@@ -68,4 +75,4 @@ val apply: Parser<Token, Expr> = doParse {
     success(Expr.Apply(left, right))
 }
 
-val expr: Parser<Token, Expr> = alt(nonAppExpr, apply) { "Invalid expression" }
+val expr: Parser<Token, Expr> = alt(single, nonAppExpr, apply) { "Invalid expression" }

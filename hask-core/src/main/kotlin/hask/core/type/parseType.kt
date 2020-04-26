@@ -1,12 +1,7 @@
-/**
- * @author Nikolaus Knop
- */
+package hask.core.type
 
-package hask.hextant.editor.type
-
-import hask.core.type.Type
-import hask.hextant.editor.type.ParseResult.Failure
-import hask.hextant.editor.type.ParseResult.Success
+import hask.core.type.ParseResult.Failure
+import hask.core.type.ParseResult.Success
 import hask.core.type.Type.*
 
 sealed class ParseResult {

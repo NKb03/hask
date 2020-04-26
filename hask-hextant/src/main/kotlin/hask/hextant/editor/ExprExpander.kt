@@ -47,7 +47,10 @@ class ExprExpander(context: Context) :
     //@ProvideCommand(shortName = "let")
     fun wrapInLet() {
         val editor = editor.now ?: return
-        val let = LetEditor(context.withEnvWrapper(), IdentifierEditor(context), null, editor)
+        val let = LetEditor(context.withEnvWrapper())
+        val b = BindingEditor(context)
+        b.value.setEditor(editor)
+        let.bindings.addLast(b)
         setEditor(let)
     }
 

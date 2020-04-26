@@ -7,10 +7,11 @@ package hask.hextant.ti
 import com.natpryce.hamkrest.*
 import com.natpryce.hamkrest.should.shouldMatch
 import hask.core.type.Type.INT
-import hask.hextant.ti.unify.ConstraintsHolderFactory
 import hask.hextant.ti.env.TIContext
+import hask.hextant.ti.unify.ConstraintsHolderFactory
 import hextant.ok
 import org.junit.jupiter.api.Test
+import reaktive.list.reactiveList
 import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 
@@ -79,9 +80,18 @@ class TypeInferenceTests {
         val letValue1 = LambdaTypeInference(letValue1Ctx, reactiveValue(ok("x")), lambdaBody, factory.createHolder())
         val letValue2 = ReferenceTypeInference(letValue2Ctx, reactiveValue(ok("x")), factory.createHolder())
         val letBody2 = IntLiteralTypeInference(letBody2Ctx, factory.createHolder())
-        val letBody1 =
-            LetTypeInference(letBody1Ctx, reactiveValue(ok("x")), letValue2, letBody2, factory.createHolder())
-        val root = LetTypeInference(rootCtx, reactiveValue(ok("id")), letValue1, letBody1, factory.createHolder())
+        val letBody1 = LetTypeInference(
+            letBody1Ctx,
+            reactiveList(reactiveValue(ok("x")) to letValue2),
+            letBody2,
+            factory.createHolder()
+        )
+        val root = LetTypeInference(
+            rootCtx,
+            reactiveList(reactiveValue(ok("id")) to letValue1),
+            letBody1,
+            factory.createHolder()
+        )
         root.errors.now shouldMatch isEmpty
         root.assertType(INT)
     }

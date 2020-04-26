@@ -10,6 +10,7 @@ import hextant.completion.NoCompleter
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
+import hextant.core.view.ListEditorControl.Orientation
 import hextant.createView
 import hextant.fx.ModifierValue.DOWN
 import hextant.fx.registerShortcuts
@@ -66,9 +67,7 @@ object HaskPlugin : PluginInitializer({
             line {
                 keyword("let")
                 space()
-                view(e.name)
-                operator("=")
-                view(e.value)
+                view(e.bindings)
             }
             line {
                 keyword("in")
@@ -77,6 +76,17 @@ object HaskPlugin : PluginInitializer({
             }
             styleClass.add("let")
         }
+    }
+    compoundView { e: BindingEditor ->
+        line {
+            view(e.name)
+            operator("=")
+            view(e.value)
+        }
+    }
+    view { e: BindingListEditor, args ->
+        args[ORIENTATION] = Orientation.Vertical
+        ListEditorControl.withAltText(e, "Add binding", args)
     }
     view { e: ExprExpander, bundle ->
         FXExpanderView(e, bundle, ExprCompleter).apply {

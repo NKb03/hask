@@ -11,3 +11,7 @@ fun lambda(vararg parameters: String, body: Expr) = parameters.foldRight(body) {
 fun apply(expr: Expr, vararg arguments: Expr) = arguments.fold(expr) { acc, a -> Apply(acc, a) }
 
 fun apply(name: String, vararg arguments: Expr) = apply(ValueOf(name), *arguments)
+
+infix fun String.be(value: Expr) = Binding(this, value)
+
+fun let(vararg bindings: Binding, body: Expr) = Let(bindings.asList(), body)

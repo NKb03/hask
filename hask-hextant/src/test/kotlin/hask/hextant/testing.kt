@@ -4,9 +4,7 @@
 
 package hask.hextant
 
-import hask.core.type.Type
-import hask.hextant.editor.type.ifFailure
-import hask.hextant.editor.type.parseType
+import hask.core.type.*
 import hask.core.type.Type.*
 import hask.hextant.ti.unify.Constraint
 import hask.hextant.ti.unify.Unificator

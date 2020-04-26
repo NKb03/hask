@@ -4,8 +4,8 @@
 
 package hask.hextant.editor.type
 
+import hask.core.type.*
 import hask.hextant.editor.IdentifierEditor
-import hask.core.type.Type
 import hask.core.type.Type.*
 import hextant.Context
 import hextant.core.editor.Expander

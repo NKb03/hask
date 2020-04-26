@@ -55,7 +55,7 @@ sealed class Type {
     }
 
     fun generalize(env: Map<String, TypeScheme>): TypeScheme {
-        val parameters = fvs(env.keys)
+        val parameters = fvs(env.keys).toList()
         return TypeScheme(parameters, this)
     }
 }

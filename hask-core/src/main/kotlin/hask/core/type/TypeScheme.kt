@@ -2,7 +2,7 @@ package hask.core.type
 
 import hask.core.type.Type.Var
 
-data class TypeScheme(val names: Set<String>, val body: Type) {
+data class TypeScheme(val names: List<String>, val body: Type) {
     fun fvs(): Set<String> = body.fvs() - names
 
     fun apply(subst: Subst): Type = body.apply(subst - names)

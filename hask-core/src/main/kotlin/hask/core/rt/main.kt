@@ -6,6 +6,7 @@ package hask.core.rt
 
 import hask.core.ast.*
 import hask.core.ast.Expr.*
+import hask.core.parse.*
 import hask.core.type.Type.ParameterizedADT
 import hask.core.rt.Value.IntValue
 import hask.core.type.Type
@@ -49,19 +50,24 @@ val map = lambda("f", "list", body = Match(ValueOf("list"), mapOf(
 
 fun main() {
     tryMap()
+    val input = CharInput.from("let x = 1 in add 1 x")
+    val ts = tokens.parse(input).force()
+    println(ts)
+    val expr = expr.parse(TokenInput.from(ts)).force()
+    println(expr)
 }
 
 private fun tryMap() {
     val source = intArrayOf(0, 1, 2, 3, 4).map(::IntLiteral).foldRight(empty()) { x, l -> x cons l }
     val f = lambda("n", body = ValueOf("n") * ValueOf("n"))
-    val expr = Let("map", map, "map"(f, source))
+    val expr = let("map" be map, body= "map"(f, source))
     println("Type of $expr = ${inferType(expr)}")
     val result = expr.eval().force()
     println(result)
 }
 
 private fun tryFac() {
-    val expr = Let("fac", fac, apply("fac", IntLiteral(10)))
+    val expr = let("fac" be fac, body = apply("fac", IntLiteral(10)))
     println("Type of \n$expr:\n${inferType(expr)}")
     val result = expr.eval().force()
     println("result = $result")

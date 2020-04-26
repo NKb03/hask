@@ -31,7 +31,7 @@ sealed class Pattern {
         override fun defineVars(namer: Namer): Env = names.withIndex().associate { (idx, name) ->
             val type = constructor.parameters[idx]
             val actual = if (type is Type.Var) typeArgs.getOrPut(type.name) { Type.Var(namer.freshName()) } else type
-            name to TypeScheme(emptySet(), actual)
+            name to TypeScheme(emptyList(), actual)
         }
 
         override fun toString(): String = buildString {

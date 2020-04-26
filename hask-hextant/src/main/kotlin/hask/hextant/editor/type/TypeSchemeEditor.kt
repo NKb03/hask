@@ -17,5 +17,5 @@ class TypeSchemeEditor(
     val body = TypeExpander(context, type)
 
     override val result: EditorResult<TypeScheme> =
-        result2(parameters, body) { params, type -> ok(TypeScheme(params.toSet(), type)) }
+        result2(parameters, body) { params, type -> ok(TypeScheme(params, type)) }
 }

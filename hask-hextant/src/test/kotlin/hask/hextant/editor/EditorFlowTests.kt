@@ -5,13 +5,13 @@
 package hask.hextant.editor
 
 import com.natpryce.hamkrest.should.shouldMatch
-import hask.hextant.context.HaskInternal
-import hask.hextant.ti.*
-import hask.hextant.ti.Builtins.BoolT
 import hask.core.type.Type.Func
 import hask.core.type.Type.INT
-import hask.hextant.ti.unify.ConstraintsHolderFactory
+import hask.hextant.context.HaskInternal
+import hask.hextant.ti.Builtins.BoolT
+import hask.hextant.ti.assertType
 import hask.hextant.ti.env.TIContext
+import hask.hextant.ti.unify.ConstraintsHolderFactory
 import hextant.test.*
 import org.junit.jupiter.api.Test
 import reaktive.value.now
@@ -36,15 +36,19 @@ class EditorFlowTests {
         val ti = TIContext.root()
         val context = testingContext {
             set(HaskInternal, TIContext, ti)
-            set(HaskInternal,
-                ConstraintsHolderFactory, ConstraintsHolderFactory.unifying(ti.unificator))
+            set(
+                HaskInternal,
+                ConstraintsHolderFactory, ConstraintsHolderFactory.unifying(ti.unificator)
+            )
         }
         val root = ExprExpander(context)
         root.expand<LetEditor>("let") {
-            name.setText("id")
-            with(value.doExpand<LambdaEditor>("lambda")) {
-                parameter.setText("x")
-                body.doExpandTo("x")
+            bindings.addLast()!!.apply {
+                name.setText("id")
+                with(value.doExpand<LambdaEditor>("lambda")) {
+                    parameter.setText("x")
+                    body.doExpandTo("x")
+                }
             }
             with(body.doExpand<ApplyEditor>("apply")) {
                 with(applied.doExpand<ApplyEditor>("apply")) {
@@ -66,24 +70,30 @@ class EditorFlowTests {
         val ti = TIContext.root()
         val context = testingContext {
             set(HaskInternal, TIContext, ti)
-            set(HaskInternal,
-                ConstraintsHolderFactory, ConstraintsHolderFactory.unifying(ti.unificator))
+            set(
+                HaskInternal,
+                ConstraintsHolderFactory, ConstraintsHolderFactory.unifying(ti.unificator)
+            )
         }
         val root = ExprExpander(context)
         root.expand<LetEditor>("let") {
-            name.setText("id")
-            with(value.doExpand<LambdaEditor>("lambda")) {
-                parameter.setText("x")
-                body.doExpandTo("x")
-            }
-            body.expand<LetEditor>("let") {
-                name.setText("x")
-                value.doExpandTo("id")
-                value.wrapInApply()
-                with(value.editor.now as ApplyEditor) {
-                    argument.doExpandTo("1")
+            with(bindings.addLast()!!) {
+                name.setText("id")
+                with(value.doExpand<LambdaEditor>("lambda")) {
+                    parameter.setText("x")
+                    body.doExpandTo("x")
                 }
-                body.doExpandTo("1")
+                body.expand<LetEditor>("let") {
+                    with(bindings.addLast()!!) {
+                        name.setText("x")
+                        value.doExpandTo("id")
+                        value.wrapInApply()
+                        with(value.editor.now as ApplyEditor) {
+                            argument.doExpandTo("1")
+                        }
+                    }
+                    body.doExpandTo("1")
+                }
             }
         }
         root.inference.errors.now shouldMatch isEmpty
@@ -98,8 +108,10 @@ class EditorFlowTests {
         val ti = TIContext.root()
         val context = testingContext {
             set(HaskInternal, TIContext, ti)
-            set(HaskInternal,
-                ConstraintsHolderFactory, ConstraintsHolderFactory.unifying(ti.unificator))
+            set(
+                HaskInternal,
+                ConstraintsHolderFactory, ConstraintsHolderFactory.unifying(ti.unificator)
+            )
         }
         val root = ExprExpander(context)
         root.expand<ApplyEditor>("apply") {

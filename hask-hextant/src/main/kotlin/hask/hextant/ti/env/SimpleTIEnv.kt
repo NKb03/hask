@@ -81,18 +81,18 @@ class SimpleTIEnv(
     override fun generalize(t: Type): ReactiveValue<TypeScheme> {
         val fvs = unmodifiableReactiveSet(t.fvs())
         val typeParameters = fvs - this.freeTypeVars
-        return typeParameters.asValue().map { TypeScheme(it.now, t) }
+        return typeParameters.asValue().map { TypeScheme(it.now.toList(), t) }
     }
 
     private class RootEnv(private val namer: Namer) : TIEnv {
         override val now: Map<String, TypeScheme> = mapOf(
-            "add" to TypeScheme(emptySet(), Func(INT, Func(INT, INT))),
-            "sub" to TypeScheme(emptySet(), Func(INT, Func(INT, INT))),
-            "mul" to TypeScheme(emptySet(), Func(INT, Func(INT, INT))),
-            "div" to TypeScheme(emptySet(), Func(INT, Func(INT, INT))),
-            "eq" to TypeScheme(setOf("a"), Func(Var("a"), Func(Var("a"), BoolT))),
-            "True" to TypeScheme(emptySet(), BoolT),
-            "False" to TypeScheme(emptySet(), BoolT)
+            "add" to TypeScheme(emptyList(), Func(INT, Func(INT, INT))),
+            "sub" to TypeScheme(emptyList(), Func(INT, Func(INT, INT))),
+            "mul" to TypeScheme(emptyList(), Func(INT, Func(INT, INT))),
+            "div" to TypeScheme(emptyList(), Func(INT, Func(INT, INT))),
+            "eq" to TypeScheme(listOf("a"), Func(Var("a"), Func(Var("a"), BoolT))),
+            "True" to TypeScheme(emptyList(), BoolT),
+            "False" to TypeScheme(emptyList(), BoolT)
         )
 
         override fun resolve(name: String): ReactiveValue<Type?> = reactiveValue(now[name]?.instantiate(namer))

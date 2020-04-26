@@ -10,7 +10,6 @@ import hask.core.parse.ParseResult.Success
 class Terminate(val failure: Failure) : Throwable()
 
 class ParserMonad<T>(private var input: Input<T>) {
-
     fun terminate(failure: Failure): Nothing = throw Terminate(failure)
 
     fun terminate(message: String): Nothing = terminate(Failure(message, input.location()))
@@ -42,6 +41,10 @@ class ParserMonad<T>(private var input: Input<T>) {
         val n = next()
         if (!predicate(n)) terminate("Expected $description got $n")
         else consume()
+    }
+
+    inline fun <reified E: T> expect(description: String) {
+        expect(description) { it is E }
     }
 }
 

@@ -10,6 +10,33 @@ import hask.core.ast.Expr.*
 import hask.core.type.Type.*
 import java.util.*
 
+private fun Expr.freeVariables(env: Set<String>, collect: MutableSet<String> = mutableSetOf()): Set<String> {
+    when (this) {
+        is IntLiteral      -> {
+        }
+        is ValueOf         -> if (name !in env) collect.add(name)
+        is Lambda          -> body.freeVariables(env + parameter, collect)
+        is Apply           -> {
+            l.freeVariables(env, collect)
+            r.freeVariables(env, collect)
+        }
+        is Let             -> {
+            val env1 = env + bindings.mapTo(mutableSetOf<String>()) { it.name }
+            bindings.forEach { (_, v) -> v.freeVariables(env1, collect) }
+            body.freeVariables(env1, collect)
+        }
+        is If              -> {
+            cond.freeVariables(env, collect)
+            then.freeVariables(env, collect)
+            otherwise.freeVariables(env, collect)
+        }
+        is ConstructorCall -> arguments.forEach { it.freeVariables(env, collect) }
+        is Match           -> TODO()
+        is ApplyBuiltin    -> arguments.forEach { it.freeVariables(env, collect) }
+    }
+    return collect
+}
+
 fun Expr.inferType(
     env: Env,
     namer: Namer,
@@ -19,7 +46,7 @@ fun Expr.inferType(
     is ValueOf         -> env[name]?.instantiate(namer) ?: error("Unbound identifier $name")
     is Lambda          -> {
         val tyVar = Var(namer.freshName())
-        val newEnv = env + (parameter to TypeScheme(emptySet(), tyVar))
+        val newEnv = env + (parameter to TypeScheme(emptyList(), tyVar))
         val bodyT = body.inferType(newEnv, namer, constraints)
         Func(tyVar, bodyT)
     }
@@ -31,12 +58,35 @@ fun Expr.inferType(
         ret
     }
     is Let             -> {
-        val defTypeVar = Var(namer.freshName())
-        val env1 = env + (name to TypeScheme(emptySet(), defTypeVar))
-        val defType = value.inferType(env1, namer, constraints)
-        val principal = principalType(defType, env1, constraints)
-        val env2 = env + (name to principal)
-        constraints.bind(defType, defTypeVar)
+        val vertices = bindings.withIndex().associate { (idx, b) -> b.name to idx }
+        val adj = Array(bindings.size) { mutableListOf<Int>() }
+        for ((i, b) in bindings.withIndex()) {
+            for (v in b.value.freeVariables(env.keys)) {
+                val j = vertices[v] ?: continue
+                adj[j].add(i)
+            }
+        }
+        val scc = SCCs(adj)
+        scc.compute()
+        val env2 = env.toMutableMap()
+        for (comp in scc.topologicalSort()) {
+            val typeVars = comp.associate { i -> bindings[i].name to Var(namer.freshName()) }
+            val env1 = env2 + typeVars.mapValues { (_, t) -> TypeScheme(emptyList(), t) }
+            val c = mutableListOf<Constraint>()
+            val t = mutableMapOf<String, Type>()
+            for (i in comp) {
+                val (name, value) = bindings[i]
+                val defTypeVar = typeVars.getValue(name)
+                val type = value.inferType(env1, namer, c)
+                c.bind(defTypeVar, type)
+                t[name] = type
+            }
+            constraints.addAll(c)
+            for ((name, type) in t) {
+                val principal = principalType(type, env1, c)
+                env2[name] = principal
+            }
+        }
         body.inferType(env2, namer, constraints)
     }
     is If              -> {
@@ -85,43 +135,6 @@ fun Expr.inferType(
     }
 }
 
-private fun unify(a: Type, b: Type, subst: MutableMap<String, Type>) {
-    when {
-        a == b                                                           -> {
-        }
-        a is Var && a.name !in b.fvs()                                   -> {
-            subst[a.name] = b
-            subst.entries.forEach { e ->
-                e.setValue(e.value.apply(mapOf(a.name to b)))
-            }
-        }
-        b is Var && b.name !in a.fvs()                                   -> {
-            subst.entries.forEach { e ->
-                e.setValue(e.value.apply(mapOf(b.name to a)))
-            }
-            subst[b.name] = a
-        }
-        a is Func && b is Func                                           -> {
-            unify(a.from, b.from, subst)
-            unify(a.to.apply(subst), b.to.apply(subst), subst)
-        }
-        a is ParameterizedADT && b is ParameterizedADT && a.adt == b.adt -> {
-            a.typeArguments.zip(b.typeArguments).forEach { (s, t) ->
-                unify(s.apply(subst), t.apply(subst), subst)
-            }
-        }
-        else                                                             -> error("Cannot solve constraint $a = $b")
-    }
-}
-
-fun unify1(constraints: Constraints): Subst {
-    val subst = mutableMapOf<String, Type>()
-    for ((a, b) in constraints) {
-        unify(a.apply(subst), b.apply(subst), subst)
-    }
-    return subst
-}
-
 fun unify(constraints: Constraints): Subst {
     if (constraints.isEmpty()) return emptyMap()
     val (l, r) = constraints.first()
@@ -163,7 +176,7 @@ fun inferType(
     val namer = SimpleNamer()
     val constraints = LinkedList<Constraint>()
     val general = expr.inferType(env, namer, constraints)
-    val subst = unify1(constraints)
+    val subst = unify(constraints)
     val specialized = general.apply(subst)
     return specialized.generalize(env)
 }

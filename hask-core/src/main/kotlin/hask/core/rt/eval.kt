@@ -86,8 +86,10 @@ fun Expr.eval(frame: StackFrame = StackFrame.root()): Thunk = when (this) {
     is Apply           -> l.eval(frame).apply(r.eval(frame))
     is Let             -> {
         val newFrame = frame.copy()
-        val thunk = value.eval(newFrame)
-        newFrame.bindVar(name, thunk)
+        for ((name, value) in bindings) {
+            val thunk = value.eval(newFrame)
+            newFrame.bindVar(name, thunk)
+        }
         body.eval(newFrame)
     }
     is If              ->

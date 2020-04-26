@@ -9,7 +9,7 @@ class TokenInput<T: IToken> private constructor(private val tokens: List<T>, pri
 
     override fun hasNext(): Boolean = index < tokens.size
 
-    override fun consume(): Input<T> = TokenInput(tokens, index)
+    override fun consume(): Input<T> = TokenInput(tokens, index + 1)
 
     override fun location(): Location = tokens[index].location
 

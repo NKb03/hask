@@ -4,28 +4,20 @@
 
 package hask.core.parse
 
-sealed class Token: IToken {
-    data class Let(override val location: Location) : Token()
-    data class Lambda(override val location: Location) : Token()
-    data class If(override val location: Location) : Token()
-    data class Then(override val location: Location) : Token()
-    data class Else(override val location: Location) : Token()
-    data class In(override val location: Location) : Token()
-    data class Assign(override val location: Location) : Token()
-    data class Arrow(override val location: Location) : Token()
-    data class LP(override val location: Location) : Token()
-    data class RP(override val location: Location) : Token()
-    data class I(val value: Int, override val location: Location) : Token() {
-        override fun toString(): String {
-            return super.toString()
-        }
-    }
-
-    data class Id(val name: String, override val location: Location) : Token() {
-        override fun toString(): String {
-            return super.toString()
-        }
-    }
+sealed class Token : IToken {
+    class Let(override val location: Location) : Token()
+    class Lambda(override val location: Location) : Token()
+    class If(override val location: Location) : Token()
+    class Then(override val location: Location) : Token()
+    class Else(override val location: Location) : Token()
+    class In(override val location: Location) : Token()
+    class Assign(override val location: Location) : Token()
+    class Arrow(override val location: Location) : Token()
+    class LP(override val location: Location) : Token()
+    class RP(override val location: Location) : Token()
+    class I(val value: Int, override val location: Location) : Token()
+    class Comma(override val location: Location) : Token()
+    class Id(val name: String, override val location: Location) : Token()
 
     override fun toString(): String = when (this) {
         is Let    -> "let"
@@ -38,8 +30,9 @@ sealed class Token: IToken {
         is Arrow  -> "->"
         is LP     -> "("
         is RP     -> ")"
-        is I   -> value.toString()
-        is Id  -> name
+        is I      -> value.toString()
+        is Id     -> name
+        is Comma  -> ", "
     }
 }
 
@@ -54,11 +47,12 @@ val token = doParse<Char, Token> {
         "if"           -> Token.If(location())
         "then"         -> Token.Then(location())
         "else"         -> Token.Else(location())
-        "In"           -> Token.In(location())
+        "in"           -> Token.In(location())
         "="            -> Token.Assign(location())
         "->"           -> Token.Arrow(location())
         "("            -> Token.LP(location())
         ")"            -> Token.RP(location())
+        ","            -> Token.Comma(location())
         else           -> when {
             str.toIntOrNull() != null     -> Token.I(str.toInt(), location())
             str.matches(IDENTIFIER_REGEX) -> Token.Id(str, location())

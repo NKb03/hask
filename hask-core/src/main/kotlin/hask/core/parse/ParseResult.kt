@@ -27,3 +27,8 @@ fun <T, R> ParseResult<T, R>.ifErr(onFailure: (Failure) -> Success<T, R>): Succe
     is Success -> this
     is Failure -> onFailure(this)
 }
+
+fun <T, R> ParseResult<T, R>.force(): R = when (this) {
+    is Success -> value
+    is Failure -> throw ParserError("$message at $location")
+}

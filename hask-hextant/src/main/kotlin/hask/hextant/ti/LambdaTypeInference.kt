@@ -25,7 +25,7 @@ class LambdaTypeInference(
 
     val parameterType = Type.Var(parameterTypeName)
 
-    private val parameterScheme = TypeScheme(emptySet(), parameterType)
+    private val parameterScheme = TypeScheme(emptyList(), parameterType)
 
     init {
         parameterName.now.map { bodyEnv.bind(it, parameterScheme) }

@@ -5,7 +5,7 @@
 package hask.core.ast
 
 import hask.core.rt.Value
-import hask.core.type.*
+import hask.core.type.Type
 
 sealed class Expr {
     data class IntLiteral(val num: Int) : Expr() {
@@ -24,8 +24,10 @@ sealed class Expr {
         override fun toString(): String = "($l $r)"
     }
 
-    data class Let(val name: String, val value: Expr, val body: Expr) : Expr() {
-        override fun toString(): String = "let $name = $value in $body"
+    data class Binding(val name: String, val value: Expr)
+
+    data class Let(val bindings: List<Binding>, val body: Expr) : Expr() {
+        override fun toString(): String = "let ${bindings.joinToString(", ") { (n, v) -> "$n = $v" }} in $body"
     }
 
     data class If(val cond: Expr, val then: Expr, val otherwise: Expr) : Expr() {
