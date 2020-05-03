@@ -40,11 +40,7 @@ class ApplyTypeInference(
     private fun bind(lt: CompileResult<Type>, rt: CompileResult<Type>) {
         if (lt is Ok && rt is Ok) {
             holder.addConstraint(
-                Constraint(
-                    lt.value,
-                    Func(rt.value, returnType),
-                    this
-                )
+                Constraint(lt.value, Func(rt.value, returnType), this)
             )
         }
     }

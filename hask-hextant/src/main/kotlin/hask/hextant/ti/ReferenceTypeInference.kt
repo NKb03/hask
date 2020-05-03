@@ -10,6 +10,7 @@ import hask.hextant.ti.env.TIContext
 import hextant.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
+import reaktive.value.now
 import reaktive.value.reactiveValue
 
 class ReferenceTypeInference(
@@ -19,8 +20,8 @@ class ReferenceTypeInference(
 ) : AbstractTypeInference(context, holder) {
     override fun dispose() {
         super.dispose()
-        //release.kill()
-        //releaseVariables(type.now)
+        release.kill()
+        releaseVariables(type.now)
     }
 
     private fun releaseVariables(t: CompileResult<Type>) {
@@ -36,5 +37,5 @@ class ReferenceTypeInference(
         context.env.resolve(n).map { t -> t.okOrErr { "Unresolved reference: $n" } }
     }
 
-    //private val release = type.observe { _, old, _ -> releaseVariables(old) }
+    private val release = type.observe { _, old, _ -> releaseVariables(old) }
 }

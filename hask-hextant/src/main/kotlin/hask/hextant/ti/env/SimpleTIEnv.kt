@@ -84,6 +84,14 @@ class SimpleTIEnv(
         return typeParameters.asValue().map { TypeScheme(it.now.toList(), t) }
     }
 
+    fun clear() {
+        declaredBindings.clear()
+        myFVS.clear()
+        queries.forEach { (_, q) ->
+            q.forEach { it.set(null) }
+        }
+    }
+
     private class RootEnv(private val namer: Namer) : TIEnv {
         override val now: Map<String, TypeScheme> = mapOf(
             "add" to TypeScheme(emptyList(), Func(INT, Func(INT, INT))),

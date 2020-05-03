@@ -83,6 +83,7 @@ class UnificatorTest {
             "b" bind "int -> int"
         }
     }
+
     @Test
     fun `bind and unbind simple constraint`() {
         test {
@@ -124,6 +125,20 @@ class UnificatorTest {
             "d -> e" bind "e -> d"
             "d -> e" unbind "e -> d"
             "a -> a" unbind "b -> c -> int"
+        }
+    }
+
+    @Test
+    fun `test`() {
+        test {
+            "c" bind "f -> a"
+            "d" bind "b -> c"
+            "b" bind "f -> a"
+            "h" bind "f -> a"
+            "i" bind "f -> a"
+            "h" bind "f -> a"
+            "i" bind "b -> c"
+            "h" bind "b -> c"
         }
     }
 }

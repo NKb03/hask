@@ -12,6 +12,7 @@ import hask.hextant.ti.unify.ConstraintsHolderFactory
 import hextant.ok
 import org.junit.jupiter.api.Test
 import reaktive.list.reactiveList
+import reaktive.set.reactiveSet
 import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
 
@@ -82,13 +83,13 @@ class TypeInferenceTests {
         val letBody2 = IntLiteralTypeInference(letBody2Ctx, factory.createHolder())
         val letBody1 = LetTypeInference(
             letBody1Ctx,
-            reactiveList(reactiveValue(ok("x")) to letValue2),
+            reactiveList(Triple(reactiveValue(ok("x")), letValue2, reactiveSet())),
             letBody2,
             factory.createHolder()
         )
         val root = LetTypeInference(
             rootCtx,
-            reactiveList(reactiveValue(ok("id")) to letValue1),
+            reactiveList(Triple(reactiveValue(ok("id")), letValue1, reactiveSet())),
             letBody1,
             factory.createHolder()
         )

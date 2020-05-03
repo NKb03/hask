@@ -11,26 +11,30 @@ import hask.hextant.ti.*
 import hask.hextant.ti.env.TIContext
 import hextant.*
 import hextant.base.CompoundEditor
+import reaktive.set.ReactiveSet
 import reaktive.value.now
 
 class IfEditor(
-    context: Context,
-    val condition: ExprExpander,
-    val ifTrue: ExprExpander,
-    val ifFalse: ExprExpander
+    context: Context
 ) : CompoundEditor<If>(context), ExprEditor<If> {
+    val condition by child(ExprExpander(context.withChildTIContext()))
+    val ifTrue by child(ExprExpander(context.withChildTIContext()))
+    val ifFalse by child(ExprExpander(context.withChildTIContext()))
+
     constructor(
         context: Context,
         cond: ExprEditor<*>? = null,
         then: ExprEditor<*>? = null,
         otherwise: ExprEditor<*>? = null
-    ) : this(context, ExprExpander(context, cond), ExprExpander(context, then), ExprExpander(context, otherwise))
-
-    init {
-        children(condition, ifTrue, ifFalse)
+    ) : this(context) {
+        if (cond != null) condition.setEditor(cond)
+        if (then != null) ifTrue.setEditor(then)
+        if (otherwise != null) ifFalse.setEditor(otherwise)
     }
 
     override val result: EditorResult<If> = result3(condition, ifTrue, ifFalse) { c, t, f -> ok(If(c, t, f)) }
+
+    override val freeVariables = condition.freeVariables + ifTrue.freeVariables + ifFalse.freeVariables
 
     override val inference = IfTypeInference(
         context[HaskInternal, TIContext],

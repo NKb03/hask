@@ -26,7 +26,7 @@ class ExpanderTypeInference(
     }
 
     private val obs = editor.observe { old, _ ->
-        old?.inference?.dispose()
+        if (!disposed) old?.inference?.dispose()
     }
 
     override val type = editor.flatMap {

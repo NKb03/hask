@@ -11,24 +11,20 @@ import hask.hextant.ti.*
 import hask.hextant.ti.env.TIContext
 import hextant.*
 import hextant.base.CompoundEditor
+import reaktive.set.ReactiveSet
 import reaktive.value.now
 
-class ApplyEditor(
-    context: Context, val applied: ExprExpander, val argument: ExprExpander
-) : CompoundEditor<Apply>(context), ExprEditor<Apply> {
-    constructor(context: Context, left: ExprEditor<*>?, right: ExprEditor<*>?) : this(
-        context,
-        ExprExpander(context.withChildTIContext(), left),
-        ExprExpander(context.withChildTIContext(), right)
-    )
-
-    init {
-        children(applied, argument)
+class ApplyEditor(context: Context) : CompoundEditor<Apply>(context), ExprEditor<Apply> {
+    val applied by child(ExprExpander(context.withChildTIContext()))
+    val argument by child(ExprExpander(context.withChildTIContext()))
+    constructor(context: Context, left: ExprEditor<*>?, right: ExprEditor<*>?) : this(context) {
+        if (left != null) applied.setEditor(left)
+        if (right != null) argument.setEditor(right)
     }
 
-    constructor(context: Context) : this(context, null, null)
-
     override val result: EditorResult<Apply> = result2(applied, argument) { l, r -> ok(Apply(l, r)) }
+
+    override val freeVariables = applied.freeVariables + argument.freeVariables
 
     override val inference = ApplyTypeInference(
         context[HaskInternal, TIContext],

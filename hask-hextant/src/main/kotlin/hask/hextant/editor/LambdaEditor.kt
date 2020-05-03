@@ -13,17 +13,19 @@ import hask.hextant.ti.*
 import hask.hextant.ti.env.TIContext
 import hextant.*
 import hextant.base.CompoundEditor
+import reaktive.list.toList
+import reaktive.set.*
+import reaktive.value.binding.map
 import reaktive.value.now
 
-class LambdaEditor private constructor(
-    context: Context,
-    val parameter: IdentifierEditor,
-    val body: ExprExpander
-) : CompoundEditor<Lambda>(context), ExprEditor<Lambda> {
-    constructor(context: Context, parameter: IdentifierEditor, body: ExprEditor<*>?)
-            : this(context, parameter, ExprExpander(context.withChildTIContext(), body))
+class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEditor<Lambda> {
+    val parameter by child(IdentifierEditor(context))
+    val body by child(ExprExpander(context.withChildTIContext()))
 
-    constructor(context: Context) : this(context, IdentifierEditor(context), null)
+    constructor(context: Context, name: String = "", t: ExprEditor<*>?) : this(context) {
+        parameter.setText(name)
+        if (t != null) body.setEditor(t)
+    }
 
     init {
         children(parameter, body)
@@ -32,6 +34,8 @@ class LambdaEditor private constructor(
     override val result: EditorResult<Lambda> = result2(parameter, body) { param, body ->
         ok(Lambda(param, body))
     }
+
+    override val freeVariables = body.freeVariables - parameter.result.map { it.orNull() }.toSet()
 
     override val inference = LambdaTypeInference(
         context[HaskInternal, TIContext],

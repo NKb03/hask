@@ -10,12 +10,15 @@ import hask.hextant.eval.EvaluationEnv
 import hask.hextant.ti.*
 import hextant.CompileResult
 import hextant.Editor
+import reaktive.set.ReactiveSet
 import reaktive.value.ReactiveValue
 
 interface ExprEditor<out E : Expr> : Editor<E> {
     val type: ReactiveValue<CompileResult<Type>> get() = inference.type
 
     val inference: TypeInference
+
+    val freeVariables: ReactiveSet<String>
 
     fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>)
 

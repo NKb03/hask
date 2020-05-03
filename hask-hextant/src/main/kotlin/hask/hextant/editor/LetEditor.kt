@@ -13,11 +13,14 @@ import hask.hextant.ti.LetTypeInference
 import hask.hextant.ti.env.TIContext
 import hextant.*
 import hextant.base.CompoundEditor
+import reaktive.set.asSet
+import reaktive.set.binding.values
+import reaktive.value.binding.map
 import reaktive.value.now
 
 class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let> {
     val bindings by child(BindingListEditor(context))
-    val body by child(ExprExpander(context))
+    val body by child(ExprExpander(context.withChildTIContext()))
 
     init {
         children(bindings, body)
@@ -36,9 +39,13 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
         }
     }
 
+    private val bound = bindings.editors.asSet().map { b -> b.name.result.map { it.orNull() } }.values()
+
+    override val freeVariables = bindings.editors.asSet().flatMap { it.value.freeVariables } + body.freeVariables - bound
+
     override val inference = LetTypeInference(
         context[HaskInternal, TIContext],
-        bindings.editors.map { it.name.result to it.value.inference },
+        bindings.editors.map { Triple(it.name.result, it.value.inference, it.value.freeVariables) },
         body.inference,
         context.createConstraintsHolder()
     )

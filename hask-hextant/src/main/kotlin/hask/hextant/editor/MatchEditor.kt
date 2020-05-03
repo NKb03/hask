@@ -9,6 +9,7 @@ import hask.hextant.ti.*
 import hextant.*
 import hextant.base.AbstractEditor
 import hextant.base.CompoundEditor
+import reaktive.set.ReactiveSet
 
 class MatchEditor(context: Context, val matched: ExprExpander) : CompoundEditor<Match>(context), ExprEditor<Match> {
     constructor(context: Context): this(context, ExprExpander(context))
@@ -23,6 +24,8 @@ class MatchEditor(context: Context, val matched: ExprExpander) : CompoundEditor<
         TODO("not implemented")
     }
 
+    override val freeVariables: ReactiveSet<String>
+        get() = TODO("not implemented")
     override val inference: TypeInference
         get() = TODO("not implemented")
 }

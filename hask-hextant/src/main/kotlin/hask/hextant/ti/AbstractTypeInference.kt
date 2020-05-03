@@ -15,7 +15,12 @@ abstract class AbstractTypeInference(
     final override val context: TIContext,
     protected val holder: ConstraintsHolder
 ) : TypeInference {
+    protected var disposed = false
+        private set
+
     override fun dispose() {
+        check(!disposed) { "$this is already disposed" }
+        disposed = true
         holder.clearConstraints()
     }
 

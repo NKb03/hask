@@ -11,8 +11,12 @@ import hask.hextant.ti.*
 import hask.hextant.ti.env.TIContext
 import hask.hextant.ti.env.TIEnvWrapper
 import hextant.Context
+import hextant.copy
 import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.ExpanderConfig
+import reaktive.set.*
+import reaktive.set.binding.flattenToSet
+import reaktive.value.binding.map
 import reaktive.value.now
 
 class ExprExpander(context: Context) :
@@ -20,6 +24,8 @@ class ExprExpander(context: Context) :
     constructor(context: Context, editor: ExprEditor<*>?) : this(context) {
         if (editor != null) setEditor(editor)
     }
+
+    override val freeVariables = editor.map { it?.freeVariables ?: emptyReactiveSet() }.flattenToSet()
 
     override val inference = ExpanderTypeInference(
         editor,
@@ -39,7 +45,7 @@ class ExprExpander(context: Context) :
     //@ProvideCommand(shortName = "apply")
     fun wrapInApply() {
         val editor = editor.now ?: return
-        val apply = ApplyEditor(context.withEnvWrapper(), editor, null)
+        val apply = ApplyEditor(context.withEnvWrapper(), editor.copy(), null)
         setEditor(apply)
         views { group.getViewOf(apply.argument).focus() }
     }

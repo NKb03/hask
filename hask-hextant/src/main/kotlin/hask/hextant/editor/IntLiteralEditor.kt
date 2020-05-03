@@ -11,6 +11,8 @@ import hask.hextant.ti.env.TIContext
 import hextant.*
 import hextant.core.editor.TokenEditor
 import hextant.core.view.TokenEditorView
+import reaktive.set.ReactiveSet
+import reaktive.set.emptyReactiveSet
 
 class IntLiteralEditor(context: Context) : TokenEditor<IntLiteral, TokenEditorView>(context), ExprEditor<IntLiteral> {
     constructor(context: Context, text: String) : this(context) {
@@ -21,6 +23,8 @@ class IntLiteralEditor(context: Context) : TokenEditor<IntLiteral, TokenEditorVi
         token.toIntOrNull().okOrErr { "Invalid integer literal $token" }.map(::IntLiteral)
 
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {}
+
+    override val freeVariables = emptyReactiveSet<String>()
 
     override val inference = IntLiteralTypeInference(context[HaskInternal, TIContext], context.createConstraintsHolder())
 }
