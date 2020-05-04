@@ -27,10 +27,6 @@ class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEdit
         if (t != null) body.setEditor(t)
     }
 
-    init {
-        children(parameter, body)
-    }
-
     override val result: EditorResult<Lambda> = result2(parameter, body) { param, body ->
         ok(Lambda(param, body))
     }

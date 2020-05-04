@@ -9,9 +9,9 @@ import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.ti.*
 import hask.hextant.ti.env.TIContext
-import hask.hextant.ti.env.TIEnvWrapper
-import hextant.Context
-import hextant.copy
+import hextant.*
+import hextant.command.Command.Type.SingleReceiver
+import hextant.command.meta.ProvideCommand
 import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.ExpanderConfig
 import reaktive.set.*
@@ -33,30 +33,21 @@ class ExprExpander(context: Context) :
         context.createConstraintsHolder()
     )
 
-    private val myEnv = context[HaskInternal, TIContext].env
-
-    private val envSynchronizer = editor.observe { _, _, new ->
-        if (new != null) {
-            val wrapper = new.inference.context.env as TIEnvWrapper
-            wrapper.setWrapped(myEnv)
-        }
-    }
-
-    //@ProvideCommand(shortName = "apply")
+    @ProvideCommand(shortName = "apply", type = SingleReceiver)
     fun wrapInApply() {
         val editor = editor.now ?: return
-        val apply = ApplyEditor(context.withEnvWrapper(), editor.copy(), null)
+        val apply = ApplyEditor(context)
+        apply.applied.setEditor(editor.copy())
         setEditor(apply)
         views { group.getViewOf(apply.argument).focus() }
     }
 
-    //@ProvideCommand(shortName = "let")
+    @ProvideCommand(shortName = "let", type = SingleReceiver)
     fun wrapInLet() {
         val editor = editor.now ?: return
-        val let = LetEditor(context.withEnvWrapper())
-        val b = BindingEditor(context)
-        b.value.setEditor(editor)
-        let.bindings.addLast(b)
+        val let = LetEditor(context)
+        val b = let.bindings.addLast()!!
+        b.value.setEditor(editor.copy())
         setEditor(let)
     }
 
@@ -75,19 +66,19 @@ class ExprExpander(context: Context) :
 
     companion object {
         val config = ExpanderConfig<ExprEditor<Expr>>().apply {
-            registerConstant("let") { LetEditor(it.withEnvWrapper()) }
-            registerConstant("apply") { ApplyEditor(it.withEnvWrapper()) }
-            registerConstant("dec") { IntLiteralEditor(it.withEnvWrapper()) }
-            registerConstant("lambda") { LambdaEditor(it.withEnvWrapper()) }
-            registerConstant("get") { ValueOfEditor(it.withEnvWrapper()) }
-            registerConstant("if") { IfEditor(it.withEnvWrapper()) }
+            registerConstant("let") { LetEditor(it) }
+            registerConstant("apply") { ApplyEditor(it) }
+            registerConstant("dec") { IntLiteralEditor(it) }
+            registerConstant("lambda") { LambdaEditor(it) }
+            registerConstant("get") { ValueOfEditor(it) }
+            registerConstant("if") { IfEditor(it) }
             registerInterceptor { text, context ->
                 val asInt = text.toIntOrNull()
                 when {
                     asInt != null                                   ->
-                        IntLiteralEditor(context.withEnvWrapper(), text)
+                        IntLiteralEditor(context, text)
                     text.matches(IdentifierEditor.IDENTIFIER_REGEX) ->
-                        ValueOfEditor(context.withEnvWrapper(), text)
+                        ValueOfEditor(context, text)
                     else                                            -> null
                 }
             }

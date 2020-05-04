@@ -17,9 +17,9 @@ import reaktive.value.now
 class IfEditor(
     context: Context
 ) : CompoundEditor<If>(context), ExprEditor<If> {
-    val condition by child(ExprExpander(context.withChildTIContext()))
-    val ifTrue by child(ExprExpander(context.withChildTIContext()))
-    val ifFalse by child(ExprExpander(context.withChildTIContext()))
+    val condition by child(ExprExpander(context))
+    val ifTrue by child(ExprExpander(context))
+    val ifFalse by child(ExprExpander(context))
 
     constructor(
         context: Context,

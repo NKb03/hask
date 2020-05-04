@@ -7,7 +7,7 @@ package hask.hextant.ti
 import hask.core.type.TypeScheme
 import hask.core.type.Type
 import hask.hextant.ti.unify.ConstraintsHolder
-import hask.hextant.ti.env.SimpleTIEnv
+import hask.hextant.ti.env.TIEnv
 import hask.hextant.ti.env.TIContext
 import hextant.*
 import reaktive.value.binding.map
@@ -19,7 +19,7 @@ class LambdaTypeInference(
     private val bodyTypeInference: TypeInference,
     holder: ConstraintsHolder
 ) : AbstractTypeInference(context, holder) {
-    private val bodyEnv get() = bodyTypeInference.context.env as SimpleTIEnv
+    private val bodyEnv get() = bodyTypeInference.context.env
 
     private val parameterTypeName = context.namer.freshName()
 

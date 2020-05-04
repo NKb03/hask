@@ -15,8 +15,8 @@ import reaktive.set.ReactiveSet
 import reaktive.value.now
 
 class ApplyEditor(context: Context) : CompoundEditor<Apply>(context), ExprEditor<Apply> {
-    val applied by child(ExprExpander(context.withChildTIContext()))
-    val argument by child(ExprExpander(context.withChildTIContext()))
+    val applied by child(ExprExpander(context))
+    val argument by child(ExprExpander(context))
     constructor(context: Context, left: ExprEditor<*>?, right: ExprEditor<*>?) : this(context) {
         if (left != null) applied.setEditor(left)
         if (right != null) argument.setEditor(right)

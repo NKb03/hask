@@ -27,8 +27,8 @@ class HaskEditorApplication : HextantApplication() {
     }
 
     override fun createView(context: Context): Parent {
-        val unifier = context[HaskInternal, TIContext].unificator
-        context[HaskInternal, ConstraintsHolderFactory] = ConstraintsHolderFactory.unifying(unifier)
+        val unificator = context[HaskInternal, TIContext].unificator
+        context[HaskInternal, ConstraintsHolderFactory] = ConstraintsHolderFactory.unifying(unificator)
         val editor = ExprExpander(context)
         val cl = CommandLine(context, ContextCommandSource(context))
         val cli = CommandLineControl(cl, createBundle())
@@ -40,7 +40,10 @@ class HaskEditorApplication : HextantApplication() {
                     Alert(INFORMATION, result.toString()).show()
                 }
                 on("Ctrl+D") {
-                    println(unifier.substitutions())
+                    println("Constraints:")
+                    for (c in unificator.constraints()) println(c)
+                    println("Unifier:")
+                    for (s in unificator.substitutions()) println("${s.key} = ${s.value}")
                 }
             }
 

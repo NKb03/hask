@@ -4,9 +4,11 @@
 
 package hask.hextant.ti.env
 
+import hask.core.type.Type
+import hask.core.type.TypeScheme
 import hask.hextant.context.HaskInternal
-import hask.hextant.ti.unify.GroupedUnificator
-import hask.hextant.ti.unify.Unificator
+import hask.hextant.ti.unify.*
+import hextant.*
 import hextant.bundle.Property
 
 data class TIContext(
@@ -14,13 +16,25 @@ data class TIContext(
     val unificator: Unificator,
     val env: TIEnv
 ) {
-    fun child() = copy(env = SimpleTIEnv(env, namer))
+    fun child() = copy(env = TIEnv(env, namer))
+
+    fun displayType(type: CompileResult<Type>) =  when (type) {
+        is Err   -> "[ERROR: ${type.message}]"
+        is Ok    -> type.value.apply(unificator.substitutions()).toString()
+        ChildErr -> "[ERROR]"
+    }
+
+    fun displayTypeScheme(type: CompileResult<TypeScheme>) =  when (type) {
+        is Err   -> "[ERROR: ${type.message}]"
+        is Ok    -> type.value.apply(unificator.substitutions()).toString()
+        ChildErr -> "[ERROR]"
+    }
 
     companion object : Property<TIContext, HaskInternal, HaskInternal>("Type Inference Context") {
         fun root(): TIContext {
             val namer = ReleasableNamer()
-            val env = SimpleTIEnv(namer)
-            val unifier = GroupedUnificator()
+            val env = TIEnv(namer)
+            val unifier = SimpleUnificator()
             return TIContext(namer, unifier, env)
         }
     }

@@ -19,8 +19,8 @@ class ReferenceTypeInference(
 ) : AbstractTypeInference(context, holder) {
     override fun dispose() {
         super.dispose()
-//        release.kill()
-//        releaseVariables(type.now)
+        release.kill()
+        releaseVariables(type.now)
     }
 
     private fun releaseVariables(t: CompileResult<Type>) {
@@ -36,5 +36,5 @@ class ReferenceTypeInference(
         context.env.resolve(n).map { t -> t ?: err("Unresolved reference: '$n'") }
     }
 
-//    private val release = type.observe { _, old, _ -> releaseVariables(old) }
+    private val release = type.observe { _, old, _ -> releaseVariables(old) }
 }

@@ -8,10 +8,11 @@ import hextant.completion.CompletionResult.Match
 
 object ReferenceCompleter : Completer<Context, String> {
     override fun completions(context: Context, input: String): Collection<Completion<String>> {
-        val env = context[HaskInternal, TIContext].env
-        return env.now.entries.mapNotNull { (n, t) ->
+        val ti = context[HaskInternal, TIContext]
+        return ti.env.now.entries.mapNotNull { (n, t) ->
             val match = CompletionStrategy.simple.match(input, n) as? Match ?: return@mapNotNull null
-            Completion(n, input, n, match.matchedRegions, "$n:$t", t.toString(), null)
+            val desc = ti.displayTypeScheme(t)
+            Completion(n, input, n, match.matchedRegions, "$n:$desc", desc, null)
         }.toSet()
     }
 }

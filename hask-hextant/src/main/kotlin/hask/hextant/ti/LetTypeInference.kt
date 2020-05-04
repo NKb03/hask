@@ -4,10 +4,9 @@
 
 package hask.hextant.ti
 
-import hask.core.type.SCCs
+import hask.core.type.*
 import hask.core.type.Type.Var
-import hask.core.type.TypeScheme
-import hask.hextant.ti.env.SimpleTIEnv
+import hask.hextant.ti.env.TIEnv
 import hask.hextant.ti.env.TIContext
 import hask.hextant.ti.unify.ConstraintsHolder
 import hask.hextant.ti.unify.bind
@@ -55,7 +54,7 @@ class LetTypeInference(
 
     private fun env(b: Triple<EditorResult<String>, TypeInference, ReactiveSet<String>>) = env(b.second)
 
-    private fun env(inf: TypeInference) = inf.context.env as SimpleTIEnv
+    private fun env(inf: TypeInference) = inf.context.env
 
     private fun recompute() {
         clear()
@@ -97,7 +96,7 @@ class LetTypeInference(
                 holder.bind(reactiveValue(ok(defTypeVar)), inf.type, this)
                 env[n] = inf.type.flatMap { t ->
                     if (t is Ok) context.unificator.substitute(t.value).flatMap { context.env.generalize(it) }.map { ok(it) }
-                    else reactiveValue(t as CompileResult<TypeScheme>)
+                    else reactiveValue(t.castError<Type, TypeScheme>())
                 }
             }
         }
@@ -124,7 +123,7 @@ class LetTypeInference(
 
     private fun addEnvToBody(env: Map<String, ReactiveValue<CompileResult<TypeScheme>>>) {
         for ((name, type) in env) {
-            val e = bodyType.context.env as SimpleTIEnv
+            val e = bodyType.context.env
             val o = type.forEach { t -> e.bind(name, t) }
             observers.add(o)
         }

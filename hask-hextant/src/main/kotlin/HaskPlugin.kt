@@ -12,6 +12,7 @@ import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation
+import hextant.core.view.ListEditorControl.Orientation.Horizontal
 import hextant.fx.ModifierValue.DOWN
 import hextant.fx.registerShortcuts
 import hextant.fx.shortcut
@@ -95,12 +96,7 @@ object HaskPlugin : PluginInitializer({
                 on(shortcut(T) { control(DOWN) }) {
                     val type = e.type.now
                     val ti = e.context[HaskInternal, TIContext]
-                    val substituted = type.map { it.apply(ti.unificator.substitutions()) }
-                    val txt = when (type) {
-                        is Err   -> "[ERROR: $substituted.message]"
-                        is Ok    -> type.value.apply(ti.unificator.substitutions()).toString()
-                        ChildErr -> "[ERROR]"
-                    }
+                    val txt = ti.displayType(type)
                     PopOver(Text(txt)).run {
                         isHideOnEscape = true
                         show(this@apply)
@@ -193,7 +189,7 @@ object HaskPlugin : PluginInitializer({
         }
     }
     view { e: IdentifierListEditor, bundle ->
-        bundle[ORIENTATION] = ListEditorControl.Orientation.Horizontal
+        bundle[ORIENTATION] = Horizontal
         bundle[CELL_FACTORY] = { ListEditorControl.SeparatorCell(" ") }
         ListEditorControl(e, bundle)
     }

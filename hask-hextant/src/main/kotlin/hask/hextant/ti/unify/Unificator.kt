@@ -17,4 +17,6 @@ interface Unificator {
     fun substitute(type: Type): ReactiveValue<Type>
 
     fun substituteNow(type: Type): Type = type.apply(substitutions())
+
+    fun constraints(): Set<Constraint>
 }

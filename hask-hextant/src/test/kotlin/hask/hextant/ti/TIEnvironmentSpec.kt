@@ -8,7 +8,7 @@ import com.natpryce.hamkrest.should.shouldMatch
 import hask.core.type.Type
 import hask.core.type.Type.INT
 import hask.hextant.ti.env.ReleasableNamer
-import hask.hextant.ti.env.SimpleTIEnv
+import hask.hextant.ti.env.TIEnv
 import hextant.Ok
 import hextant.test.*
 import org.jetbrains.spek.api.Spek
@@ -17,7 +17,7 @@ import reaktive.value.now
 
 object TIEnvironmentSpec : Spek({
     given("an empty type inference environment") {
-        val env = SimpleTIEnv(ReleasableNamer())
+        val env = TIEnv(ReleasableNamer())
         it("should be empty") {
             env.now.entries shouldMatch isEmpty
         }
@@ -30,7 +30,7 @@ object TIEnvironmentSpec : Spek({
         on("binding some variable") {
             env.bind("v1", Ok(INT.generalize(emptySet())))
             it("should set the resolved variable type") {
-                t1.now shouldEqual Type.INT
+                t1.now shouldEqual INT
             }
         }
         on("unbinding the variable") {
@@ -42,9 +42,9 @@ object TIEnvironmentSpec : Spek({
         given("a child environment") {
             val child = env.child()
             it("should have all the entries of the parent env") {
-                env.bind("v1", Ok(Type.INT.generalize(emptySet())))
-                child.now shouldEqual mapOf("v1" to Type.INT.generalize(emptySet()))
-                child.resolve("v1").now shouldEqual Type.INT
+                env.bind("v1", Ok(INT.generalize(emptySet())))
+                child.now shouldEqual mapOf("v1" to INT.generalize(emptySet()))
+                child.resolve("v1").now shouldEqual INT
             }
         }
     }

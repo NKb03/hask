@@ -66,7 +66,7 @@ class UnificatorTest {
     }
 
     private fun test(block: TestingFlow.() -> Unit) {
-        TestingFlow(GroupedUnificator()).block()
+        TestingFlow(SimpleUnificator()).block()
     }
 
     @Test
@@ -129,16 +129,12 @@ class UnificatorTest {
     }
 
     @Test
-    fun `test`() {
+    fun test() {
         test {
-            "c" bind "f -> a"
-            "d" bind "b -> c"
-            "b" bind "f -> a"
-            "h" bind "f -> a"
-            "i" bind "f -> a"
-            "h" bind "f -> a"
-            "i" bind "b -> c"
-            "h" bind "b -> c"
+            "j" bind "int -> n"
+            "int -> int -> int" bind "z -> l"
+            "l" bind "n -> k"
+            "j" bind "int -> z"
         }
     }
 }
