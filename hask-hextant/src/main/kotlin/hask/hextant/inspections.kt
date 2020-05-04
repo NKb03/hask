@@ -30,28 +30,28 @@ fun typeConstraintInspection(inspected: ExprEditor<*>) = inspection(inspected) {
     checkingThat(inspected.inference.errors.isEmpty())
 }
 
-fun betaConversion(inspected: ApplyEditor) = inspection(inspected) {
-    description = "Reports lambda terms that are immediately applied to an argument"
-    isSevere(false)
-    message { "Unnecessary lambda abstraction" }
-    preventingThat(inspected.applied.result.map {
-        it.map { a -> a is Lambda }.ifErr { false }
-    } and inspected.argument.result.map { it.isOk })
-    addFix {
-        description = "Replace all usages of abstracted variable by argument"
-        fixingBy {
-            val argument = inspected.argument.editor.now ?: return@fixingBy
-            val lambda = inspected.applied.editor.now as? LambdaEditor ?: return@fixingBy
-            val lambdaBody = lambda.body.editor.now ?: return@fixingBy
-            val parameterName = lambda.parameter.result.now.ifErr { return@fixingBy }
-            val refs = mutableListOf<ValueOfEditor>()
-            lambdaBody.collectReferences(parameterName, refs)
-            for (r in refs) {
-                val ex = r.expander as? ExprExpander ?: return@fixingBy
-                ex.setEditor(argument)
-            }
-            val ex = inspected.expander as? ExprExpander ?: return@fixingBy
-            ex.setEditor(lambdaBody)
-        }
-    }
-}
+//fun betaConversion(inspected: ApplyEditor) = inspection(inspected) {
+//    description = "Reports lambda terms that are immediately applied to an argument"
+//    isSevere(false)
+//    message { "Unnecessary lambda abstraction" }
+//    preventingThat(inspected.applied.result.map {
+//        it.map { a -> a is Lambda }.ifErr { false }
+//    } and inspected.argument.result.map { it.isOk })
+//    addFix {
+//        description = "Replace all usages of abstracted variable by argument"
+//        fixingBy {
+//            val argument = inspected.argument.editor.now ?: return@fixingBy
+//            val lambda = inspected.applied.editor.now as? LambdaEditor ?: return@fixingBy
+//            val lambdaBody = lambda.body.editor.now ?: return@fixingBy
+//            val parameterName = lambda.parameters.result.now.ifErr { return@fixingBy }
+//            val refs = mutableListOf<ValueOfEditor>()
+//            lambdaBody.collectReferences(parameterName, refs)
+//            for (r in refs) {
+//                val ex = r.expander as? ExprExpander ?: return@fixingBy
+//                ex.setEditor(argument)
+//            }
+//            val ex = inspected.expander as? ExprExpander ?: return@fixingBy
+//            ex.setEditor(lambdaBody)
+//        }
+//    }
+//}

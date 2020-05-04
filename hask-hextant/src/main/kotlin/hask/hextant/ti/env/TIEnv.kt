@@ -41,11 +41,11 @@ class TIEnv(
         getQueries(name).forEach { it.set(type.map { it.instantiate(namer) }) }
     }
 
-    private fun bind(name: String, type: TypeScheme) {
+    fun bind(name: String, type: TypeScheme) {
         bind(name, ok(type))
     }
 
-    private fun bind(name: String, type: Type) {
+    fun bind(name: String, type: Type) {
         bind(name, TypeScheme(emptyList(), type))
     }
 

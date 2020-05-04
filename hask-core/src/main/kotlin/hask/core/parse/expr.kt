@@ -54,7 +54,7 @@ val lambda: Parser<Token, Expr> = doParse {
     val name = id()
     expect("'->'") { it is Token.Arrow }
     val body = expr()
-    success(Expr.Lambda(name, body))
+    success(Expr.Lambda(listOf(name), body))
 }
 
 val `if`: Parser<Token, Expr> = doParse {

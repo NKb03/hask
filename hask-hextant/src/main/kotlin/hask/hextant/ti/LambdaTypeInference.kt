@@ -4,46 +4,84 @@
 
 package hask.hextant.ti
 
-import hask.core.type.TypeScheme
 import hask.core.type.Type
-import hask.hextant.ti.unify.ConstraintsHolder
-import hask.hextant.ti.env.TIEnv
+import hask.core.type.Type.Func
+import hask.core.type.Type.Var
 import hask.hextant.ti.env.TIContext
+import hask.hextant.ti.unify.ConstraintsHolder
 import hextant.*
-import reaktive.value.binding.map
-import reaktive.value.now
+import reaktive.list.ListChange.*
+import reaktive.list.ReactiveList
+import reaktive.value.*
 
 class LambdaTypeInference(
     context: TIContext,
-    parameterName: EditorResult<String>,
+    private val parameters: ReactiveList<CompileResult<String>>,
     private val bodyTypeInference: TypeInference,
     holder: ConstraintsHolder
 ) : AbstractTypeInference(context, holder) {
     private val bodyEnv get() = bodyTypeInference.context.env
 
-    private val parameterTypeName = context.namer.freshName()
+    val typeVars = mutableListOf<String>()
 
-    val parameterType = Type.Var(parameterTypeName)
+    private val parametersObs = parameters.observeList { ch ->
+        when (ch) {
+            is Added    -> {
+                val v = context.namer.freshName()
+                typeVars.add(ch.index, v)
+                bind(ch.element, Var(v))
+            }
+            is Removed  -> {
+                val v = typeVars[ch.index]
+                typeVars.removeAt(ch.index)
+                context.namer.release(v)
+                unbind(ch.element)
+            }
+            is Replaced -> {
+                unbind(ch.old)
+                bind(ch.new, Var(typeVars[ch.index]))
+            }
+        }
+        recomputeType()
+    }
 
-    private val parameterScheme = TypeScheme(emptyList(), parameterType)
+    private fun bind(name: CompileResult<String>, t: Var) {
+        name.ifOk { n ->
+            if (parameters.now.count { it == ok(n) } == 1) bodyEnv.bind(n, t)
+        }
+    }
+
+    private fun unbind(name: CompileResult<String>) {
+        name.ifOk { n ->
+            if (parameters.now.none { it == ok(n) }) bodyEnv.unbind(n)
+        }
+    }
 
     init {
-        parameterName.now.map { bodyEnv.bind(it, ok(parameterScheme)) }
+        for (p in parameters.now) {
+            val v = context.namer.freshName()
+            typeVars.add(v)
+            p.ifOk { name ->
+                bodyEnv.bind(name, Var(v))
+            }
+        }
     }
 
-    private val parameterObs = parameterName.observe { _, old, new ->
-        old.map { bodyEnv.unbind(it) }
-        new.map { bodyEnv.bind(it, ok(parameterScheme)) }
-    }
+    private var _type = reactiveVariable(childErr<Type>())
+
+    private val bodyTypeObs = bodyTypeInference.type.forEach { recomputeType() }
 
     override fun dispose() {
         super.dispose()
-        parameterObs.kill()
-        context.namer.release(parameterTypeName)
+        parametersObs.kill()
+        bodyTypeObs.kill()
+        for (n in typeVars) context.namer.release(n)
         bodyTypeInference.dispose()
     }
 
-    override val type = bodyTypeInference.type
-        .map { resultType -> resultType.or(childErr())
-            .map { t -> Type.Func(parameterType, t) } }
+    private fun recomputeType() {
+        _type.now = bodyTypeInference.type.now.map { t -> typeVars.foldRight(t) { v, acc -> Func(Var(v), acc) } }
+    }
+
+    override val type: ReactiveValue<CompileResult<Type>> = _type
 }

@@ -1,6 +1,7 @@
 package hask.core.ast
 
-import hask.core.ast.Expr.*
+import hask.core.ast.Expr.ApplyBuiltin
+import hask.core.ast.Expr.ValueOf
 import hask.core.rt.Value
 import hask.core.rt.Value.ADTValue
 import hask.core.rt.Value.IntValue
@@ -46,26 +47,31 @@ data class Builtin(val name: String, val type: Type) {
         )
 
         fun intOperator(function: (Int, Int) -> Int) =
-            Lambda(
+            lambda(
                 "x",
-                Lambda("y", ApplyBuiltin("+", listOf(INT, INT), INT, listOf(ValueOf("x"), ValueOf("y"))) { (x, y) ->
+                "y",
+                body = ApplyBuiltin("+", listOf(INT, INT), INT, listOf(ValueOf("x"), ValueOf("y"))) { (x, y) ->
                     val valueX = (x as IntValue).value
                     val valueY = (y as IntValue).value
                     IntValue(function(valueX, valueY))
                 })
-            )
+
 
         fun constant(name: String, value: Value, type: Type) =
             ApplyBuiltin(name, emptyList(), type, emptyList()) { value }
 
-        val equals = Lambda(
+        val equals = lambda(
             "x",
-            Lambda(
-                "y",
-                ApplyBuiltin("eq", listOf(Var("a"), Var("a")), Var("a"), listOf(ValueOf("x"), ValueOf("y"))) { (x, y) ->
-                    if (x.eq(y)) ADTValue(True, emptyList())
-                    else ADTValue(False, emptyList())
-                })
+            "y",
+            body = ApplyBuiltin(
+                "eq",
+                listOf(Var("a"), Var("a")),
+                Var("a"),
+                listOf(ValueOf("x"), ValueOf("y"))
+            ) { (x, y) ->
+                if (x.eq(y)) ADTValue(True, emptyList())
+                else ADTValue(False, emptyList())
+            }
         )
 
         val emptyF = constructorFunc(listADT, empty)

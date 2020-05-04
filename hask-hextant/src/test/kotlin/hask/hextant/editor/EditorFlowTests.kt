@@ -46,7 +46,7 @@ class EditorFlowTests {
             bindings.addLast()!!.apply {
                 name.setText("id")
                 with(value.doExpand<LambdaEditor>("lambda")) {
-                    parameter.setText("x")
+                    parameters.addLast()!!.setText("x")
                     body.doExpandTo("x")
                 }
             }
@@ -80,7 +80,7 @@ class EditorFlowTests {
             with(bindings.addLast()!!) {
                 name.setText("id")
                 with(value.doExpand<LambdaEditor>("lambda")) {
-                    parameter.setText("x")
+                    parameters.addLast()!!.setText("x")
                     body.doExpandTo("x")
                 }
                 body.expand<LetEditor>("let") {

@@ -55,7 +55,7 @@ object HaskPlugin : PluginInitializer({
         CompoundEditorControl.build(e, bundle) {
             line {
                 operator("λ")
-                view(e.parameter)
+                view(e.parameters)
                 operator("->")
                 view(e.body)
             }
@@ -205,6 +205,6 @@ object HaskPlugin : PluginInitializer({
     }
     inspection(::typeOkInspection)
     inspection(::typeConstraintInspection)
-    inspection(::betaConversion)
+//    inspection(::betaConversion)
     stylesheet("hextant/hask/style.css")
 })

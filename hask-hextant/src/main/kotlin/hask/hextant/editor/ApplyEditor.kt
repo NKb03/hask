@@ -11,7 +11,6 @@ import hask.hextant.ti.*
 import hask.hextant.ti.env.TIContext
 import hextant.*
 import hextant.base.CompoundEditor
-import reaktive.set.ReactiveSet
 import reaktive.value.now
 
 class ApplyEditor(context: Context) : CompoundEditor<Apply>(context), ExprEditor<Apply> {
@@ -45,8 +44,8 @@ class ApplyEditor(context: Context) : CompoundEditor<Apply>(context), ExprEditor
 
     override fun evaluateOneStep(): ExprEditor<Expr> {
         val applied = applied.editor.now as? LambdaEditor ?: return this
-        val name = applied.parameter.result.now.ifErr { return this }
+        val name = applied.parameters.result.now.ifErr { return this }
         val body = applied.body.editor.now ?: return this
-        return body.substitute(name, argument)
+        return TODO()
     }
 }

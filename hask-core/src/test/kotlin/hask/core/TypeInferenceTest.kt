@@ -15,9 +15,9 @@ import org.junit.Test
 class TypeInferenceTest {
     @Test fun `factorial function`() {
         val expr = let(
-            "fac" be Lambda(
+            "fac" be lambda(
                 "n",
-                apply("mul", "n".v, apply("fac", apply("sub", "n".v, 1.l)))
+                body = apply("mul", "n".v, apply("fac", apply("sub", "n".v, 1.l)))
             ),
             body = "fac".v
         )
@@ -27,7 +27,7 @@ class TypeInferenceTest {
 
     @Test fun `simple let`() {
         val expr = let(
-            "double" be Lambda("n", apply("mul", "n".v, 2.l)),
+            "double" be lambda("n", body = apply("mul", "n".v, 2.l)),
             body = "double".v
         )
         val type = inferType(expr)
@@ -42,8 +42,8 @@ class TypeInferenceTest {
     @Test fun `list map`() {
         val expr = let(
             "map" be lambda(
-                "l", "f", body =
-                If(
+                "l", "f",
+                body = If(
                     apply("isEmpty", "l".v),
                     "Empty".v,
                     apply("Cons", apply("f", apply("head", "l".v)), apply("map", apply("tail", "l".v), "f".v))

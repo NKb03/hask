@@ -25,16 +25,13 @@ private fun testOrDefault() {
     val maybe = ADT("Maybe", listOf("a"))
     val just = ADTConstructor(maybe, "Just", listOf(Var("a")))
     val nothing = ADTConstructor(maybe, "Nothing", emptyList())
-    val orDefault = Lambda(
-        "default",
-        Lambda(
-            "opt",
-            Match(
-                ValueOf("opt"),
-                mapOf(
-                    Constructor(just, listOf("value")) to ValueOf("value"),
-                    Constructor(nothing, emptyList()) to ValueOf("default")
-                )
+    val orDefault = lambda(
+        "default", "opt",
+        body = Match(
+            ValueOf("opt"),
+            mapOf(
+                Constructor(just, listOf("value")) to ValueOf("value"),
+                Constructor(nothing, emptyList()) to ValueOf("default")
             )
         )
     )

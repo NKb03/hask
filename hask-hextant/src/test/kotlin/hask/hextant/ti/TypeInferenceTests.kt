@@ -21,11 +21,11 @@ class TypeInferenceTests {
     fun `simple application type inference`() { // (\x -> x) 1 : int
         val context = TIContext.root()
         val factory = ConstraintsHolderFactory.unifying(context.unificator)
-        val parameterName = reactiveVariable(ok("x"))
+        val parameters = reactiveList(ok("x"))
         val ref = reactiveVariable(ok("x"))
         val lambdaContext = context.child()
         val body = ReferenceTypeInference(lambdaContext.child(), ref, factory.createHolder())
-        val lambda = LambdaTypeInference(lambdaContext, parameterName, body, factory.createHolder())
+        val lambda = LambdaTypeInference(lambdaContext, parameters, body, factory.createHolder())
         val application = ApplyTypeInference(
             context,
             lambda,
@@ -49,7 +49,7 @@ class TypeInferenceTests {
     fun `occurs check should fail`() { //\x -> x x
         val context = TIContext.root()
         val factory = ConstraintsHolderFactory.unifying(context.unificator)
-        val parameterName = reactiveVariable(ok("x"))
+        val parameters = reactiveList(ok("x"))
         val ref = reactiveVariable(ok("x"))
         val bodyContext = context.child()
         val body = ApplyTypeInference(
@@ -58,7 +58,7 @@ class TypeInferenceTests {
             ReferenceTypeInference(bodyContext.child(), ref, factory.createHolder()),
             factory.createHolder()
         )
-        val lambda = LambdaTypeInference(context, parameterName, body, factory.createHolder())
+        val lambda = LambdaTypeInference(context, parameters, body, factory.createHolder())
     }
 
     //let id = ;root
@@ -78,7 +78,7 @@ class TypeInferenceTests {
         val letValue2Ctx = letBody1Ctx.child()
         val letBody2Ctx = letBody1Ctx.child()
         val lambdaBody = ReferenceTypeInference(lambdaBodyCtx, reactiveValue(ok("x")), factory.createHolder())
-        val letValue1 = LambdaTypeInference(letValue1Ctx, reactiveValue(ok("x")), lambdaBody, factory.createHolder())
+        val letValue1 = LambdaTypeInference(letValue1Ctx, reactiveList(ok("x")), lambdaBody, factory.createHolder())
         val letValue2 = ReferenceTypeInference(letValue2Ctx, reactiveValue(ok("x")), factory.createHolder())
         val letBody2 = IntLiteralTypeInference(letBody2Ctx, factory.createHolder())
         val letBody1 = LetTypeInference(

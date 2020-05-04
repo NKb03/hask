@@ -15,7 +15,7 @@ private fun Expr.freeVariables(env: Set<String>, collect: MutableSet<String> = m
         is IntLiteral      -> {
         }
         is ValueOf         -> if (name !in env) collect.add(name)
-        is Lambda          -> body.freeVariables(env + parameter, collect)
+        is Lambda          -> body.freeVariables(env + parameters, collect)
         is Apply           -> {
             l.freeVariables(env, collect)
             r.freeVariables(env, collect)
@@ -45,10 +45,10 @@ fun Expr.inferType(
     is IntLiteral      -> INT
     is ValueOf         -> env[name]?.instantiate(namer) ?: error("Unbound identifier $name")
     is Lambda          -> {
-        val tyVar = Var(namer.freshName())
-        val newEnv = env + (parameter to TypeScheme(emptyList(), tyVar))
+        val tyVars = List(parameters.size) { Var(namer.freshName()) }
+        val newEnv = env + parameters.zip(tyVars.map { v -> TypeScheme(emptyList(), v) })
         val bodyT = body.inferType(newEnv, namer, constraints)
-        Func(tyVar, bodyT)
+        tyVars.foldRight(bodyT) { t, acc -> Func(t, acc) }
     }
     is Apply           -> {
         val lt = l.inferType(env, namer, constraints)

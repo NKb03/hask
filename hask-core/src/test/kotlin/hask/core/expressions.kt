@@ -7,7 +7,7 @@ package hask.core
 import hask.core.ast.Expr
 import hask.core.ast.Expr.*
 
-fun lambda(vararg parameters: String, body: Expr) = parameters.foldRight(body) { s, acc -> Lambda(s, acc) }
+fun lambda(vararg parameters: String, body: Expr) = Lambda(parameters.toList(), body)
 
 fun apply(func: Expr, vararg args: Expr) = args.fold(func) { acc, arg -> Apply(acc, arg) }
 

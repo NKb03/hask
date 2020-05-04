@@ -4,11 +4,11 @@
 
 package hask.core.rt
 
-import hask.core.ast.*
-import hask.core.ast.Builtin.Companion
+import hask.core.ast.Builtin
 import hask.core.ast.Builtin.Companion.BooleanT
 import hask.core.ast.Builtin.Companion.constant
 import hask.core.ast.Builtin.Companion.intOperator
+import hask.core.ast.Expr
 import hask.core.ast.Expr.*
 import hask.core.ast.Pattern.*
 import hask.core.rt.Thunk.State.Evaluated
@@ -18,7 +18,7 @@ import hask.core.rt.Value.IntValue
 
 class Thunk private constructor(private var state: State) {
     private sealed class State {
-        data class Unevaluated(val parameter: String?, val frame: StackFrame, val eval: (StackFrame) -> Thunk) :
+        data class Unevaluated(val parameters: List<String>, val frame: StackFrame, val eval: (StackFrame) -> Thunk) :
             State()
 
         data class Evaluated(val value: Value) : State()
@@ -26,7 +26,7 @@ class Thunk private constructor(private var state: State) {
 
     fun force(): Value = when (val st = state) {
         is Unevaluated -> {
-            check(st.parameter == null) { "Cannot force closure with parameters" }
+            check(st.parameters.isEmpty()) { "Cannot force closure with parameters" }
             val value = st.eval(st.frame).force()
             state = Evaluated(value)
             value
@@ -36,21 +36,24 @@ class Thunk private constructor(private var state: State) {
 
     fun apply(argument: Thunk): Thunk {
         val st = state
-        check(st is Unevaluated && st.parameter != null)
-        return st.eval(st.frame.withBinding(st.parameter, argument))
+        check(st is Unevaluated && st.parameters.isNotEmpty())
+        return function(st.parameters.drop(1), st.frame.withBinding(st.parameters.first(), argument), st.eval)
     }
 
     companion object {
-        fun lazy(frame: StackFrame, eval: (StackFrame) -> Thunk) = Thunk(Unevaluated(null, frame, eval))
+        fun lazy(frame: StackFrame, eval: (StackFrame) -> Thunk) = Thunk(Unevaluated(emptyList(), frame, eval))
 
         fun strict(value: Value) = Thunk(Evaluated(value))
 
-        fun function(parameter: String, frame: StackFrame, eval: (StackFrame) -> Thunk) =
-            Thunk(Unevaluated(parameter, frame, eval))
+        fun function(parameters: List<String>, frame: StackFrame, eval: (StackFrame) -> Thunk) =
+            Thunk(Unevaluated(parameters, frame, eval))
     }
 }
 
-class StackFrame private constructor(private val variables: MutableMap<String, Thunk>, private val parent: StackFrame?) {
+class StackFrame private constructor(
+    private val variables: MutableMap<String, Thunk>,
+    private val parent: StackFrame?
+) {
     fun withBinding(name: String, thunk: Thunk) = StackFrame(mutableMapOf(name to thunk), parent = this)
 
     fun copy() = StackFrame(variables.toMutableMap(), parent)
@@ -82,7 +85,7 @@ class StackFrame private constructor(private val variables: MutableMap<String, T
 fun Expr.eval(frame: StackFrame = StackFrame.root()): Thunk = when (this) {
     is IntLiteral      -> Thunk.strict(IntValue(num))
     is ValueOf         -> frame.getVar(name)
-    is Lambda          -> Thunk.function(parameter, frame) { fr -> body.eval(fr) }
+    is Lambda          -> Thunk.function(parameters, frame) { fr -> body.eval(fr) }
     is Apply           -> l.eval(frame).apply(r.eval(frame))
     is Let             -> {
         val newFrame = frame.copy()

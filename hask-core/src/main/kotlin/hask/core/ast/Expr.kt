@@ -16,8 +16,8 @@ sealed class Expr {
         override fun toString(): String = name
     }
 
-    data class Lambda(val parameter: String, val body: Expr) : Expr() {
-        override fun toString(): String = "λ$parameter -> $body"
+    data class Lambda(val parameters: List<String>, val body: Expr) : Expr() {
+        override fun toString(): String = "λ${parameters.joinToString(" ")} -> $body"
     }
 
     data class Apply(val l: Expr, val r: Expr) : Expr() {
