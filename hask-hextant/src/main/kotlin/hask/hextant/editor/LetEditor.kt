@@ -23,7 +23,7 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
     val body by child(ExprExpander(context.withChildTIContext()))
 
     init {
-        children(bindings, body)
+        bindings.ensureNotEmpty()
     }
 
     override val result: EditorResult<Let> = result2(bindings, body) { bs, b ->

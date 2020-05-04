@@ -16,7 +16,6 @@ class ReleasableNamer: Namer {
 
     override fun freshName(): String {
         released.pollFirst()?.let {
-            println("reusing $it")
             return@freshName it
         }
         val str = "$char$counter"

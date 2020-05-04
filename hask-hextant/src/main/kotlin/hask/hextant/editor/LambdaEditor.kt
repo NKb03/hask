@@ -24,6 +24,10 @@ class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEdit
     val parameters by child(IdentifierListEditor(context))
     val body by child(ExprExpander(context.withChildTIContext()))
 
+    init {
+        parameters.ensureNotEmpty()
+    }
+
     constructor(context: Context, name: String = "", t: ExprEditor<*>?) : this(context) {
         parameters.addLast(IdentifierEditor(context, name))
         if (t != null) body.setEditor(t)
