@@ -27,7 +27,7 @@ class TIEnv(
 
     private val myFVS = Counter(fvSet.now)
 
-    private val freeTypeVars: ReactiveSet<String> =
+    val freeTypeVars: ReactiveSet<String> =
         if (parent == null) fvSet else fvSet + parent.freeTypeVars
 
     private val queries = mutableMapOf<String, MutableList<ReactiveVariable<CompileResult<Type>?>>>()

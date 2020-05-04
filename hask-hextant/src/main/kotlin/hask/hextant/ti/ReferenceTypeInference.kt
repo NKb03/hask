@@ -26,7 +26,7 @@ class ReferenceTypeInference(
     private fun releaseVariables(t: CompileResult<Type>) {
         t.ifOk {
             for (name in it.fvs()) {
-                context.namer.release(name)
+                if (name !in context.env.freeTypeVars.now) context.namer.release(name)
             }
         }
     }
