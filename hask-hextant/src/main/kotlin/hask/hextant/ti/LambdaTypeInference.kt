@@ -28,12 +28,12 @@ class LambdaTypeInference(
     private val parameterScheme = TypeScheme(emptyList(), parameterType)
 
     init {
-        parameterName.now.map { bodyEnv.bind(it, parameterScheme) }
+        parameterName.now.map { bodyEnv.bind(it, ok(parameterScheme)) }
     }
 
     private val parameterObs = parameterName.observe { _, old, new ->
         old.map { bodyEnv.unbind(it) }
-        new.map { bodyEnv.bind(it, parameterScheme) }
+        new.map { bodyEnv.bind(it, ok(parameterScheme)) }
     }
 
     override fun dispose() {

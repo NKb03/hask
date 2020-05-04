@@ -18,7 +18,7 @@ infix fun TypeScheme.shouldMatch(expected: TypeScheme) {
 
 infix fun TypeScheme.shouldMatch(expected: String) {
     val t = parseType(expected).ifFailure { f -> throw AssertionError(f.message) }.result
-    shouldMatch(t.generalize(emptyMap()))
+    shouldMatch(t.generalize(emptySet()))
 }
 
 fun <R> (() -> R).shouldThrow(exceptionCls: KClass<out Throwable>) {

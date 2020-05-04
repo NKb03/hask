@@ -166,7 +166,7 @@ private fun bind(
 
 fun principalType(type: Type, env: Env, constraints: Constraints): TypeScheme {
     val subst = unify(constraints)
-    return type.apply(subst).generalize(env)
+    return type.apply(subst).generalize(env.keys)
 }
 
 fun inferType(
@@ -178,5 +178,5 @@ fun inferType(
     val general = expr.inferType(env, namer, constraints)
     val subst = unify(constraints)
     val specialized = general.apply(subst)
-    return specialized.generalize(env)
+    return specialized.generalize(env.keys)
 }

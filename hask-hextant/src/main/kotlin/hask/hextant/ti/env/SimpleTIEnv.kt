@@ -5,9 +5,10 @@
 package hask.hextant.ti.env
 
 import hask.core.type.*
-import hask.hextant.ti.Builtins.BoolT
 import hask.core.type.Type.*
+import hask.hextant.ti.Builtins.BoolT
 import hask.hextant.ti.impl.Counter
+import hextant.*
 import reaktive.asValue
 import reaktive.set.*
 import reaktive.value.*
@@ -18,12 +19,9 @@ class SimpleTIEnv(
     private val parent: TIEnv?,
     private val namer: ReleasableNamer
 ) : TIEnv {
-    constructor(namer: ReleasableNamer) : this(
-        RootEnv(
-            namer
-        ), namer)
+    constructor(namer: ReleasableNamer) : this(RootEnv(namer), namer)
 
-    private val declaredBindings = mutableMapOf<String, TypeScheme>()
+    private val declaredBindings = mutableMapOf<String, CompileResult<TypeScheme>>()
 
     private val fvSet = reactiveSet<String>()
 
@@ -32,27 +30,27 @@ class SimpleTIEnv(
     override val freeTypeVars: ReactiveSet<String> =
         if (parent == null) fvSet else fvSet + parent.freeTypeVars
 
-    private val queries = mutableMapOf<String, MutableList<ReactiveVariable<Type?>>>()
+    private val queries = mutableMapOf<String, MutableList<ReactiveVariable<CompileResult<Type>?>>>()
 
-    private fun getQueries(name: String): List<ReactiveVariable<Type?>> = queries[name] ?: emptyList()
+    private fun getQueries(name: String): List<ReactiveVariable<CompileResult<Type>?>> = queries[name] ?: emptyList()
 
-    fun bind(name: String, type: TypeScheme) {
+    fun bind(name: String, type: CompileResult<TypeScheme>) {
         if (declaredBindings[name] == type) return
         declaredBindings[name] = type
-        myFVS.addAll(type.fvs())
-        getQueries(name).forEach { it.set(type.instantiate(namer)) }
+        type.ifOk { myFVS.addAll(it.fvs()) }
+        getQueries(name).forEach { it.set(type.map { it.instantiate(namer) }) }
     }
 
     fun unbind(name: String) {
         if (name !in declaredBindings) return
         val type = declaredBindings.remove(name)!!
-        myFVS.removeAll(type.fvs())
+        type.ifOk { myFVS.removeAll(it.fvs()) }
         getQueries(name).forEach { it.set(null) }
     }
 
-    override fun resolve(name: String): ReactiveValue<Type?> {
+    override fun resolve(name: String): ReactiveValue<CompileResult<Type>?> {
         val queries = queries.getOrPut(name) { mutableListOf() }
-        val tpe = declaredBindings[name]?.instantiate(namer)
+        val tpe = declaredBindings[name]?.map { it.instantiate(namer) }
         val referent = reactiveVariable(tpe)
         queries.add(referent)
         return if (parent != null)
@@ -60,9 +58,9 @@ class SimpleTIEnv(
         else referent
     }
 
-    override val now: Map<String, TypeScheme>
+    override val now: Map<String, CompileResult<TypeScheme>>
         get() {
-            val res = mutableMapOf<String, TypeScheme>()
+            val res = mutableMapOf<String, CompileResult<TypeScheme>>()
             var env: TIEnv = this
             while (true) {
                 if (env is SimpleTIEnv) {
@@ -93,19 +91,22 @@ class SimpleTIEnv(
     }
 
     private class RootEnv(private val namer: Namer) : TIEnv {
-        override val now: Map<String, TypeScheme> = mapOf(
-            "add" to TypeScheme(emptyList(), Func(INT, Func(INT, INT))),
-            "sub" to TypeScheme(emptyList(), Func(INT, Func(INT, INT))),
-            "mul" to TypeScheme(emptyList(), Func(INT, Func(INT, INT))),
-            "div" to TypeScheme(emptyList(), Func(INT, Func(INT, INT))),
-            "eq" to TypeScheme(listOf("a"), Func(Var("a"), Func(Var("a"), BoolT))),
-            "True" to TypeScheme(emptyList(), BoolT),
-            "False" to TypeScheme(emptyList(), BoolT)
+        private fun entry(name: String, type: Type) = entry(name, TypeScheme(emptyList(), type))
+        private fun entry(name: String, scheme: TypeScheme) = name to ok(scheme)
+
+        override val now: Map<String, CompileResult<TypeScheme>> = mapOf(
+            entry("add", Func(INT, Func(INT, INT))),
+            entry("sub", Func(INT, Func(INT, INT))),
+            entry("mul", Func(INT, Func(INT, INT))),
+            entry("div", Func(INT, Func(INT, INT))),
+            entry("eq", TypeScheme(listOf("a"), Func(Var("a"), Func(Var("a"), BoolT)))),
+            entry("True", BoolT),
+            entry("False", BoolT)
         )
 
-        override fun resolve(name: String): ReactiveValue<Type?> = reactiveValue(now[name]?.instantiate(namer))
+        override fun resolve(name: String) = reactiveValue(now[name]?.map { it.instantiate(namer) })
 
-        override fun generalize(t: Type): ReactiveValue<TypeScheme> = reactiveValue(t.generalize(now))
+        override fun generalize(t: Type): ReactiveValue<TypeScheme> = reactiveValue(t.generalize(now.keys))
 
         override val freeTypeVars: ReactiveSet<String> = emptyReactiveSet()
     }

@@ -82,12 +82,12 @@ class LetTypeInference(
             for (i in comp) {
                 val e = env(vertices[i])
                 for ((name, type) in env) {
-                    val o = type.forEach { t -> t.ifOk { e.bind(name, it) } }
+                    val o = type.forEach { t -> e.bind(name, t) }
                     observers.add(o)
                 }
                 for (j in comp) {
                     val name = vertices[j].first.now.orNull() ?: continue
-                    e.bind(name, TypeScheme(emptyList(), typeVars[j]))
+                    e.bind(name, ok(TypeScheme(emptyList(), typeVars[j])))
                 }
             }
             for (i in comp) {
@@ -96,10 +96,8 @@ class LetTypeInference(
                 val defTypeVar = typeVars[i]
                 holder.bind(reactiveValue(ok(defTypeVar)), inf.type, this)
                 env[n] = inf.type.flatMap { t ->
-                    if (t is Ok) context.unificator.substitute(t.value)
-                        .flatMap { context.env.generalize(it) }
-                        .map { ok(it) }
-                    else reactiveValue(childErr<TypeScheme>()).asBinding()
+                    if (t is Ok) context.unificator.substitute(t.value).flatMap { context.env.generalize(it) }.map { ok(it) }
+                    else reactiveValue(t as CompileResult<TypeScheme>)
                 }
             }
         }
@@ -117,7 +115,7 @@ class LetTypeInference(
                     val type = typeVars[u]
                     for (v in topo[j]) {
                         val e = env(vertices[v])
-                        e.bind(name, TypeScheme(emptyList(), type))
+                        e.bind(name, ok(TypeScheme(emptyList(), type)))
                     }
                 }
             }
@@ -127,10 +125,7 @@ class LetTypeInference(
     private fun addEnvToBody(env: Map<String, ReactiveValue<CompileResult<TypeScheme>>>) {
         for ((name, type) in env) {
             val e = bodyType.context.env as SimpleTIEnv
-            val o = type.forEach { t ->
-                if (t is Ok) e.bind(name, t.value)
-                else e.unbind(name)
-            }
+            val o = type.forEach { t -> e.bind(name, t) }
             observers.add(o)
         }
     }

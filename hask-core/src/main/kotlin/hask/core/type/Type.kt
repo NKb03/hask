@@ -54,8 +54,8 @@ sealed class Type {
         is Func, is ParameterizedADT -> true
     }
 
-    fun generalize(env: Map<String, TypeScheme>): TypeScheme {
-        val parameters = fvs(env.keys).toList()
+    fun generalize(env: Set<String>): TypeScheme {
+        val parameters = fvs(env).toList()
         return TypeScheme(parameters, this)
     }
 }

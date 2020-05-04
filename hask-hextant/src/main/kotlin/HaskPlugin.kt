@@ -5,17 +5,16 @@ import hask.hextant.editor.type.*
 import hask.hextant.ti.env.TIContext
 import hask.hextant.view.IdentifierEditorControl
 import hask.hextant.view.ValueOfEditorControl
+import hextant.*
 import hextant.base.CompoundEditorControl
 import hextant.completion.NoCompleter
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation
-import hextant.createView
 import hextant.fx.ModifierValue.DOWN
 import hextant.fx.registerShortcuts
 import hextant.fx.shortcut
-import hextant.ifErr
 import hextant.plugin.dsl.PluginInitializer
 import javafx.scene.input.KeyCode.*
 import javafx.scene.text.Text
@@ -94,10 +93,15 @@ object HaskPlugin : PluginInitializer({
                 on(shortcut(U) { control(DOWN) }) { e.wrapInApply() }
                 on(shortcut(V) { control(DOWN); alt(DOWN) }) { e.wrapInLet() }
                 on(shortcut(T) { control(DOWN) }) {
-                    val type = e.type.now.ifErr { return@on }
+                    val type = e.type.now
                     val ti = e.context[HaskInternal, TIContext]
-                    val substituted = type.apply(ti.unificator.substitutions())
-                    PopOver(Text(substituted.toString())).run {
+                    val substituted = type.map { it.apply(ti.unificator.substitutions()) }
+                    val txt = when (type) {
+                        is Err   -> "[ERROR: $substituted.message]"
+                        is Ok    -> type.value.apply(ti.unificator.substitutions()).toString()
+                        ChildErr -> "[ERROR]"
+                    }
+                    PopOver(Text(txt)).run {
                         isHideOnEscape = true
                         show(this@apply)
                     }

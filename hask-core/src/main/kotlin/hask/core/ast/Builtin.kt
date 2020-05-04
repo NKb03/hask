@@ -96,6 +96,6 @@ data class Builtin(val name: String, val type: Type) {
 
         val env = env(all)
 
-        fun env(builtin: List<Builtin>) = builtin.associate { it.name to it.type.generalize(emptyMap()) }
+        fun env(builtin: List<Builtin>) = builtin.associate { it.name to it.type.generalize(emptySet()) }
     }
 }

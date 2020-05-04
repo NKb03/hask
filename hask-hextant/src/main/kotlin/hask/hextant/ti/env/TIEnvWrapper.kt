@@ -6,6 +6,7 @@ package hask.hextant.ti.env
 
 import hask.core.type.TypeScheme
 import hask.core.type.Type
+import hextant.CompileResult
 import reaktive.set.binding.flattenToSet
 import reaktive.value.*
 import reaktive.value.binding.flatMap
@@ -19,9 +20,9 @@ class TIEnvWrapper(initial: TIEnv):
         wrapped.set(env)
     }
 
-    override fun resolve(name: String): ReactiveValue<Type?> = wrapped.flatMap { it.resolve(name) }
+    override fun resolve(name: String): ReactiveValue<CompileResult<Type>?> = wrapped.flatMap { it.resolve(name) }
 
-    override val now: Map<String, TypeScheme>
+    override val now: Map<String, CompileResult<TypeScheme>>
         get() = wrapped.now.now
 
     override fun generalize(t: Type): ReactiveValue<TypeScheme> = wrapped.flatMap { it.generalize(t) }
