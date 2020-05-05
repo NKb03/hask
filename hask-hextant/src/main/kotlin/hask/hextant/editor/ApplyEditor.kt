@@ -53,16 +53,22 @@ class ApplyEditor private constructor(
         }
     }
 
-    override fun substitute(name: String, editor: ExprEditor<Expr>): ApplyEditor {
-        val args = ExprListEditor(context)
-        for (e in arguments.editors.now) args.addLast(e.copy())
-        return ApplyEditor(context, applied.substitute(name, editor), args)
+    override fun substitute(env: Map<String, ExprEditor<Expr>>): ApplyEditor {
+        applied.substitute(env)
+        for (a in arguments.editors.now) a.substitute(env)
+        return this
     }
 
     override fun evaluateOneStep(): ExprEditor<Expr> {
         val applied = applied.editor.now as? LambdaEditor ?: return this
-        val name = applied.parameters.result.now.ifErr { return this }
+        val parameters = applied.parameters.result.now.ifErr { return this }
         val body = applied.body.editor.now ?: return this
-        return TODO()
+        val env = parameters.zip(arguments.editors.now).toMap()
+        return body.substitute(env)
+    }
+
+    override fun canEvalOneStep(): Boolean {
+        val applied = applied.editor.now as? LambdaEditor ?: return false
+        return applied.parameters.result.now.isOk && applied.body.isExpanded
     }
 }

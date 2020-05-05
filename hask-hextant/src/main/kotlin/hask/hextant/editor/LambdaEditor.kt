@@ -64,4 +64,10 @@ class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEdit
 
     override fun lookup(name: String): ExprEditor<Expr>? =
         if (parameters.results.now.any { it == ok(name) }) null else super.lookup(name)
+
+    override fun substitute(env: Map<String, ExprEditor<Expr>>): ExprEditor<*> {
+        val bound = parameters.results.now.mapNotNull { it.orNull() }
+        body.substitute(env - bound)
+        return this
+    }
 }

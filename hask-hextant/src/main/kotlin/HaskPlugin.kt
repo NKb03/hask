@@ -1,23 +1,28 @@
-import hask.hextant.*
 import hask.hextant.context.HaskInternal
 import hask.hextant.editor.*
 import hask.hextant.editor.type.*
 import hask.hextant.ti.env.TIContext
+import hask.hextant.typeConstraintInspection
+import hask.hextant.typeOkInspection
 import hask.hextant.view.IdentifierEditorControl
 import hask.hextant.view.ValueOfEditorControl
-import hextant.*
 import hextant.base.CompoundEditorControl
 import hextant.base.view
-import hextant.bundle.createBundle
+import hextant.command.Command.Type.SingleReceiver
+import hextant.command.command
+import hextant.command.parameter
 import hextant.completion.NoCompleter
 import hextant.core.view.*
-import hextant.core.view.ListEditorControl.*
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
+import hextant.core.view.ListEditorControl.Orientation
 import hextant.core.view.ListEditorControl.Orientation.Horizontal
+import hextant.core.view.ListEditorControl.SeparatorCell
+import hextant.createView
 import hextant.fx.ModifierValue.DOWN
 import hextant.fx.registerShortcuts
 import hextant.fx.shortcut
+import hextant.ifErr
 import hextant.plugin.dsl.PluginInitializer
 import javafx.scene.input.KeyCode.*
 import javafx.scene.text.Text
@@ -114,9 +119,9 @@ object HaskPlugin : PluginInitializer({
                         show(this@apply)
                     }
                 }
-                //                on(shortcut(E) { control(DOWN) }) {
-                //                    e.evaluateOnce()
-                //                }
+                on(shortcut(E) { control(DOWN) }) {
+                    e.evaluateOneStep()
+                }
                 //                on(shortcut(E) { control(DOWN); shift(DOWN) }) {
                 //                    e.evaluateFully()
                 //                }
@@ -208,8 +213,16 @@ object HaskPlugin : PluginInitializer({
             }
         }
     }
+    registerCommand<ExprExpander, Unit> {
+        name = "eval"
+        shortName = "eval"
+        description = "Applies one step of evaluation"
+        type = SingleReceiver
+        applicableIf { it.editor.now?.canEvalOneStep() ?: false }
+        executing { exp, _ -> exp.evaluateOneStep() }
+    }
     inspection(::typeOkInspection)
     inspection(::typeConstraintInspection)
-//    inspection(::betaConversion)
+    //    inspection(::betaConversion)
     stylesheet("hextant/hask/style.css")
 })

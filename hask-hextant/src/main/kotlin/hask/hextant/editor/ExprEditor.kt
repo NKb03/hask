@@ -7,7 +7,7 @@ package hask.hextant.editor
 import hask.core.ast.Expr
 import hask.core.type.Type
 import hask.hextant.eval.EvaluationEnv
-import hask.hextant.ti.*
+import hask.hextant.ti.TypeInference
 import hextant.CompileResult
 import hextant.Editor
 import reaktive.set.ReactiveSet
@@ -22,37 +22,19 @@ interface ExprEditor<out E : Expr> : Editor<E> {
 
     fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>)
 
-    //@ProvideCommand(shortName = "eval")
-    fun evaluateOnce() {
-        val exp = expander as? ExprExpander ?: return
-        val new = evaluateOneStep()
-        if (new !== this) {
-            exp.setEditor(new)
-        }
-    }
-
-    //@ProvideCommand(shortName = "eval!")
-    fun evaluateFully() {
-        TODO("not implemented")
-    }
-
-    //@ProvideCommand(shortName = "uneval")
-    fun unevaluate() {
-        TODO("not implemented")
-    }
-
-    //@ProvideCommand(shortName = "uneval!")
-    fun unevaluateFully() {
-        TODO("not implemented")
-    }
-
     override fun supportsCopyPaste(): Boolean = true
 
     fun buildEnv(env: EvaluationEnv) {}
 
+    fun canEvalOneStep(): Boolean = false
+
     fun evaluateOneStep(): ExprEditor<Expr> = this
 
-    fun lookup(name: String): ExprEditor<Expr>? = (parent as? ExprEditor<*>)?.lookup(name)
+    fun lookup(name: String): ExprEditor<Expr>? = when (val p = parent) {
+        is ExprEditor<*>  -> p.lookup(name)
+        is ExprListEditor -> (p.parent as? ExprEditor<Expr>)?.lookup(name)
+        else              -> null
+    }
 
-    fun substitute(name: String, editor: ExprEditor<Expr>): ExprEditor<*> = this
+    fun substitute(env: Map<String, ExprEditor<Expr>>): ExprEditor<*> = this
 }

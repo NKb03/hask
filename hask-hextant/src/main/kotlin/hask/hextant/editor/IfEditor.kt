@@ -11,7 +11,6 @@ import hask.hextant.ti.*
 import hask.hextant.ti.env.TIContext
 import hextant.*
 import hextant.base.CompoundEditor
-import reaktive.set.ReactiveSet
 import reaktive.value.now
 
 class IfEditor(
@@ -58,5 +57,18 @@ class IfEditor(
             "False" -> ifFalse
             else    -> this
         }
+    }
+
+    override fun substitute(env: Map<String, ExprEditor<Expr>>): ExprEditor<*> {
+        condition.substitute(env)
+        ifTrue.substitute(env)
+        ifFalse.substitute(env)
+        return this
+    }
+
+    override fun canEvalOneStep(): Boolean {
+        val cond = condition.editor.now as? ValueOfEditor ?: return false
+        val v = cond.result.now.ifErr { return false }
+        return v.name in setOf("True", "False")
     }
 }

@@ -47,10 +47,15 @@ class HaskEditorApplication : HextantApplication() {
                     for (s in unificator.substitutions()) println("${s.key} = ${s.value}")
                     println("${ti.namer}")
                 }
+                on("ESCAPE") {
+                    cli.receiveFocus()
+                }
             }
 
         }
-        return VBox(editorView, cli)
+        val box = VBox(editorView, cli)
+        box.setPrefSize(500.0, 500.0)
+        return box
     }
 
     companion object {

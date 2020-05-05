@@ -12,8 +12,7 @@ import hask.hextant.ti.env.TIContext
 import hextant.*
 import hextant.command.Command.Type.SingleReceiver
 import hextant.command.meta.ProvideCommand
-import hextant.core.editor.ConfiguredExpander
-import hextant.core.editor.ExpanderConfig
+import hextant.core.editor.*
 import reaktive.set.*
 import reaktive.set.binding.flattenToSet
 import reaktive.value.binding.map
@@ -55,6 +54,21 @@ class ExprExpander(context: Context) :
         setEditor(let)
     }
 
+    //@ProvideCommand(shortName = "eval!")
+    fun evaluateFully() {
+        TODO("not implemented")
+    }
+
+    //@ProvideCommand(shortName = "uneval")
+    fun unevaluate() {
+        TODO("not implemented")
+    }
+
+    //@ProvideCommand(shortName = "uneval!")
+    fun unevaluateFully() {
+        TODO("not implemented")
+    }
+
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {
         editor.now?.collectReferences(variable, acc)
     }
@@ -63,10 +77,24 @@ class ExprExpander(context: Context) :
         throw AssertionError()
     }
 
-    override fun evaluateOneStep(): ExprEditor<Expr> = ExprExpander(context, editor.now?.evaluateOneStep())
+    override fun evaluateOneStep(): ExprEditor<Expr> {
+        val e = editor.now ?: return this
+        val new = e.evaluateOneStep()
+        if (new is ExprExpander) {
+            val c = new.editor.now
+            if (c != null) setEditor(c.copy())
+            else reset()
+        }
+        else if (new !== e) setEditor(new.copy())
+        return this
+    }
 
-    override fun substitute(name: String, editor: ExprEditor<Expr>): ExprExpander =
-        ExprExpander(context, this.editor.now?.substitute(name, editor))
+    override fun substitute(env: Map<String, ExprEditor<Expr>>): ExprExpander {
+        val e = this.editor.now ?: return this
+        val new = e.substitute(env)
+        if (new !== e) setEditor(new.copy())
+        return this
+    }
 
     companion object {
         val config = ExpanderConfig<ExprEditor<Expr>>().apply {

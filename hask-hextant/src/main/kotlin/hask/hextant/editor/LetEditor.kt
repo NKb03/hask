@@ -41,7 +41,8 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
 
     private val bound = bindings.editors.asSet().map { b -> b.name.result.map { it.orNull() } }.values()
 
-    override val freeVariables = bindings.editors.asSet().flatMap { it.value.freeVariables } + body.freeVariables - bound
+    override val freeVariables =
+        bindings.editors.asSet().flatMap { it.value.freeVariables } + body.freeVariables - bound
 
     override val inference = LetTypeInference(
         context[HaskInternal, TIContext],
@@ -56,10 +57,24 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
         }
     }
 
-    override fun substitute(name: String, editor: ExprEditor<Expr>): LetEditor = TODO()
+    override fun substitute(env: Map<String, ExprEditor<Expr>>): LetEditor {
+        val bound = bindings.editors.now.mapNotNull { it.name.result.now.orNull() }
+        val e = env - bound
+        for (b in bindings.editors.now) b.value.substitute(e)
+        body.substitute(e)
+        return this
+    }
 
-    override fun evaluateOneStep(): ExprEditor<Expr> = TODO()
+    override fun evaluateOneStep(): ExprEditor<Expr> {
+        val env = mutableMapOf<String, ExprEditor<Expr>>()
+        for (b in bindings.editors.now) {
+            b.name.result.now.ifOk { name ->
+                env[name] = b.value
+            }
+        }
+        return body.substitute(env)
+    }
 
     override fun lookup(name: String): ExprEditor<Expr>? =
-        bindings.editors.now.find { it.name.result.now == ok(name) }?.value
+        bindings.editors.now.find { it.name.result.now == ok(name) }?.value ?: super.lookup(name)
 }

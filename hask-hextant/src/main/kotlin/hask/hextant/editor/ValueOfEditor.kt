@@ -12,7 +12,6 @@ import hask.hextant.ti.env.TIContext
 import hask.hextant.view.ValueOfEditorView
 import hextant.*
 import hextant.core.editor.TokenEditor
-import reaktive.set.ReactiveSet
 import reaktive.set.toSet
 import reaktive.value.binding.map
 import reaktive.value.now
@@ -45,9 +44,10 @@ class ValueOfEditor(context: Context) : TokenEditor<ValueOf, ValueOfEditorView>(
 
     override fun evaluateOneStep(): ExprEditor<Expr> {
         val name = result.now.map { it.name }.ifErr { return this }
-        return lookup(name)?.copyFor(this.context) ?: this
+        return lookup(name) ?: this
     }
 
-    override fun substitute(name: String, editor: ExprEditor<Expr>): ExprEditor<*> =
-        if (name == text.now) editor.copyFor(this.context) else this
+    override fun canEvalOneStep(): Boolean = evaluateOneStep() !== this
+
+    override fun substitute(env: Map<String, ExprEditor<Expr>>): ExprEditor<*> = env[text.now] ?: this
 }
