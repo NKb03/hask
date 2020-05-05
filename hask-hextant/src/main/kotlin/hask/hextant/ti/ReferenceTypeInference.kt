@@ -5,8 +5,8 @@
 package hask.hextant.ti
 
 import hask.core.type.Type
-import hask.hextant.ti.unify.ConstraintsHolder
 import hask.hextant.ti.env.TIContext
+import hask.hextant.ti.unify.ConstraintsHolder
 import hextant.*
 import reaktive.value.*
 import reaktive.value.binding.flatMap
@@ -17,18 +17,12 @@ class ReferenceTypeInference(
     name: EditorResult<String>,
     holder: ConstraintsHolder
 ) : AbstractTypeInference(context, holder) {
+    private val usedVariables = mutableSetOf<String>()
+
     override fun dispose() {
         super.dispose()
         release.kill()
-        releaseVariables(type.now)
-    }
-
-    private fun releaseVariables(t: CompileResult<Type>) {
-        t.ifOk {
-            for (name in it.fvs()) {
-                if (name !in context.env.freeTypeVars.now) context.namer.release(name)
-            }
-        }
+        for (v in usedVariables) context.namer.release(v)
     }
 
     override val type: ReactiveValue<CompileResult<Type>> = name.flatMap {
@@ -36,5 +30,9 @@ class ReferenceTypeInference(
         context.env.resolve(n).map { t -> t ?: err("Unresolved reference: '$n'") }
     }
 
-    private val release = type.observe { _, old, _ -> releaseVariables(old) }
+    private val release = type.forEach { new ->
+        for (v in usedVariables) context.namer.release(v)
+        usedVariables.clear()
+        new.ifOk { t -> usedVariables.addAll(t.fvs(env = context.env.freeTypeVars.now)) }
+    }
 }

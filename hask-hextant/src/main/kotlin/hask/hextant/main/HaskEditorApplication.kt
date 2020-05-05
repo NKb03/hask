@@ -27,7 +27,8 @@ class HaskEditorApplication : HextantApplication() {
     }
 
     override fun createView(context: Context): Parent {
-        val unificator = context[HaskInternal, TIContext].unificator
+        val ti = context[HaskInternal, TIContext]
+        val unificator = ti.unificator
         context[HaskInternal, ConstraintsHolderFactory] = ConstraintsHolderFactory.unifying(unificator)
         val editor = ExprExpander(context)
         val cl = CommandLine(context, ContextCommandSource(context))
@@ -44,6 +45,7 @@ class HaskEditorApplication : HextantApplication() {
                     for (c in unificator.constraints()) println(c)
                     println("Unifier:")
                     for (s in unificator.substitutions()) println("${s.key} = ${s.value}")
+                    println("${ti.namer}")
                 }
             }
 

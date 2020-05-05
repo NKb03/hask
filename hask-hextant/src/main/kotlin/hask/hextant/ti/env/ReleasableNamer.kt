@@ -13,9 +13,11 @@ class ReleasableNamer: Namer {
     private var char = 'a'
 
     private val released = TreeSet<String>()
+    private val used = mutableSetOf<String>()
 
     override fun freshName(): String {
         released.pollFirst()?.let {
+            used.add(it)
             return@freshName it
         }
         val str = "$char$counter"
@@ -23,10 +25,20 @@ class ReleasableNamer: Namer {
             char = 'a'
             counter++
         } else char++
+        used.add(str)
         return str
     }
 
+    override fun toString(): String = buildString {
+        append("Used ")
+        used.joinTo(this, postfix = "\n")
+        append("Available: ")
+        released.joinTo(this, postfix = "\n")
+        append("Next: $char$counter")
+    }
+
     fun release(name: String) {
-        released.add(name)
+        if (!used.remove(name)) System.err.println("Never used $name")
+        if (!released.add(name)) System.err.println("Already released $name")
     }
 }
