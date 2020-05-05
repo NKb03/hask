@@ -11,6 +11,8 @@ sealed class Pattern {
 
     abstract fun defineVars(namer: Namer): Env
 
+    open fun boundVariables(): Set<String> = emptySet()
+
     data class Integer(val value: Int) : Pattern() {
         override fun defineVars(namer: Namer): Env = emptyMap()
 
@@ -33,6 +35,8 @@ sealed class Pattern {
             val actual = if (type is Type.Var) typeArgs.getOrPut(type.name) { Type.Var(namer.freshName()) } else type
             name to TypeScheme(emptyList(), actual)
         }
+
+        override fun boundVariables(): Set<String> = names.toSet()
 
         override fun toString(): String = buildString {
             append(constructor.name)

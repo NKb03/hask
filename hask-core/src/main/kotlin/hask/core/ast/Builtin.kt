@@ -2,10 +2,9 @@ package hask.core.ast
 
 import hask.core.ast.Expr.ApplyBuiltin
 import hask.core.ast.Expr.ValueOf
-import hask.core.rt.Value
-import hask.core.rt.Value.ADTValue
-import hask.core.rt.Value.IntValue
-import hask.core.rt.eq
+import hask.core.rt.NormalForm
+import hask.core.rt.NormalForm.ADTValue
+import hask.core.rt.NormalForm.IntValue
 import hask.core.type.Type
 import hask.core.type.Type.*
 
@@ -50,14 +49,14 @@ data class Builtin(val name: String, val type: Type) {
             lambda(
                 "x",
                 "y",
-                body = ApplyBuiltin("+", listOf(INT, INT), INT, listOf(ValueOf("x"), ValueOf("y"))) { (x, y) ->
+                body = ApplyBuiltin("+", listOf(INT, INT), INT, listOf("x".v, "y".v)) { (x, y) ->
                     val valueX = (x as IntValue).value
                     val valueY = (y as IntValue).value
                     IntValue(function(valueX, valueY))
                 })
 
 
-        fun constant(name: String, value: Value, type: Type) =
+        fun constant(name: String, value: NormalForm, type: Type) =
             ApplyBuiltin(name, emptyList(), type, emptyList()) { value }
 
         val equals = lambda(
@@ -67,7 +66,7 @@ data class Builtin(val name: String, val type: Type) {
                 "eq",
                 listOf(Var("a"), Var("a")),
                 Var("a"),
-                listOf(ValueOf("x"), ValueOf("y"))
+                listOf("x".v, "y".v)
             ) { (x, y) ->
                 if (x.eq(y)) ADTValue(True, emptyList())
                 else ADTValue(False, emptyList())

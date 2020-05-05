@@ -4,7 +4,7 @@
 
 package hask.core.ast
 
-import hask.core.rt.Value
+import hask.core.rt.NormalForm
 import hask.core.type.Type
 
 sealed class Expr {
@@ -67,7 +67,7 @@ sealed class Expr {
         val parameters: List<Type>,
         val returnType: Type,
         val arguments: List<Expr>,
-        val function: (List<Value>) -> Value
+        val function: (List<NormalForm>) -> NormalForm
     ) : Expr() {
         override fun toString(): String = buildString {
             append('(')

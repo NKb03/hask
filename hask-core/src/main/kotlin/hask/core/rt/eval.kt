@@ -11,42 +11,30 @@ import hask.core.ast.Builtin.Companion.intOperator
 import hask.core.ast.Expr
 import hask.core.ast.Expr.*
 import hask.core.ast.Pattern.*
-import hask.core.rt.Thunk.State.Evaluated
-import hask.core.rt.Thunk.State.Unevaluated
-import hask.core.rt.Value.ADTValue
-import hask.core.rt.Value.IntValue
+import hask.core.rt.NormalForm.*
+import hask.core.rt.NormalForm.Function
 
-class Thunk private constructor(private var state: State) {
-    private sealed class State {
-        data class Unevaluated(val parameters: List<String>, val frame: StackFrame, val eval: (StackFrame) -> Thunk) :
-            State()
+private sealed class ThunkState
 
-        data class Evaluated(val value: Value) : State()
-    }
+private data class Unevaluated(val frame: StackFrame, val expr: Expr) : ThunkState()
 
-    fun force(): Value = when (val st = state) {
-        is Unevaluated -> {
-            check(st.parameters.isEmpty()) { "Cannot force closure with parameters" }
-            val value = st.eval(st.frame).force()
-            state = Evaluated(value)
-            value
-        }
+private data class Evaluated(val value: NormalForm) : ThunkState()
+
+class Thunk private constructor(private var state: ThunkState) {
+    fun force(): NormalForm = when (val st = state) {
+        is Unevaluated -> st.expr.force(st.frame).also { state = Evaluated(it) }
         is Evaluated   -> st.value
     }
 
-    fun apply(argument: Thunk): Thunk {
-        val st = state
-        check(st is Unevaluated && st.parameters.isNotEmpty())
-        return function(st.parameters.drop(1), st.frame.withBinding(st.parameters.first(), argument), st.eval)
+    override fun toString(): String = when (val st = state) {
+        is Unevaluated -> "unevaluated ${st.expr}}"
+        is Evaluated   -> "evaluated ${st.value}"
     }
 
     companion object {
-        fun lazy(frame: StackFrame, eval: (StackFrame) -> Thunk) = Thunk(Unevaluated(emptyList(), frame, eval))
+        fun lazy(frame: StackFrame, expr: Expr) = Thunk(Unevaluated(frame, expr))
 
-        fun strict(value: Value) = Thunk(Evaluated(value))
-
-        fun function(parameters: List<String>, frame: StackFrame, eval: (StackFrame) -> Thunk) =
-            Thunk(Unevaluated(parameters, frame, eval))
+        fun strict(value: NormalForm) = Thunk(Evaluated(value))
     }
 }
 
@@ -67,6 +55,17 @@ class StackFrame private constructor(
     fun getVar(name: String): Thunk =
         variables[name] ?: parent?.getVar(name) ?: throw NoSuchElementException("Variable $name is not bound")
 
+    override fun toString(): String = buildString {
+        var f = this@StackFrame
+        while (true) {
+            println(f.variables)
+            for ((name, value) in f.variables) {
+                append("$name = $value")
+            }
+            f = f.parent ?: break
+        }
+    }
+
     companion object {
         private val prelude = mutableMapOf(
             "add" to intOperator(Int::plus).eval(),
@@ -82,45 +81,60 @@ class StackFrame private constructor(
     }
 }
 
-fun Expr.eval(frame: StackFrame = StackFrame.root()): Thunk = when (this) {
-    is IntLiteral      -> Thunk.strict(IntValue(num))
-    is ValueOf         -> frame.getVar(name)
-    is Lambda          -> Thunk.function(parameters, frame) { fr -> body.eval(fr) }
-    is Apply           -> l.eval(frame).apply(r.eval(frame))
+internal fun NormalForm.apply(argument: Thunk): NormalForm {
+    check(this is Function) { "Cannot use $this as function" }
+    val p = parameters.first()
+    val rest = parameters.drop(1)
+    val f = frame.withBinding(p, argument)
+    return if (rest.isEmpty()) body.force(f)
+    else Function(rest, body, f)
+}
+
+fun Expr.force(frame: StackFrame = StackFrame.root()): NormalForm = when (this) {
+    is IntLiteral      -> IntValue(num)
+    is ValueOf         -> frame.getVar(name).force()
+    is Lambda          -> Function(parameters, body, frame)
+    is Apply           -> l.force(frame).apply(r.eval(frame))
     is Let             -> {
         val newFrame = frame.copy()
         for ((name, value) in bindings) {
             val thunk = value.eval(newFrame)
             newFrame.bindVar(name, thunk)
         }
-        body.eval(newFrame)
+        body.force(newFrame)
     }
     is If              ->
-        if ((cond.eval(frame).force() as ADTValue).constructor == Builtin.True)
-            then.eval(frame)
-        else otherwise.eval(frame)
-    is ConstructorCall -> Thunk.strict(ADTValue(constructor, arguments.map { it.eval(frame) }))
-    is Match           -> Thunk.lazy(frame) {
+        if ((cond.force(frame) as ADTValue).constructor == Builtin.True) then.force(frame)
+        else otherwise.force(frame)
+    is ConstructorCall -> ADTValue(constructor, arguments.map { it.eval(frame) })
+    is Match           -> run {
         for ((pattern, body) in arms) {
             when (pattern) {
                 is Integer     -> {
-                    val value = (expr.eval(frame).force() as IntValue).value
-                    if (value == pattern.value) return@lazy body.eval(frame)
+                    val value = (expr.force(frame) as IntValue).value
+                    if (value == pattern.value) return body.force(frame)
                 }
                 is Constructor -> {
-                    val value = (expr.eval(frame).force() as ADTValue)
+                    val value = (expr.force(frame) as ADTValue)
                     if (value.constructor == pattern.constructor) {
                         val bindings = pattern.names.zip(value.fields).toMap()
-                        return@lazy body.eval(frame.withBindings(bindings))
+                        return body.force(frame.withBindings(bindings))
                     }
                 }
-                Otherwise      -> return@lazy body.eval(frame)
+                Otherwise      -> return body.force(frame)
             }
         }
         error("No match")
     }
     is ApplyBuiltin    -> {
-        val values = arguments.map { it.eval(frame).force() }
-        Thunk.strict(function(values))
+        val values = arguments.map { it.force(frame) }
+        function(values)
     }
+}
+
+fun Expr.eval(frame: StackFrame = StackFrame.root()): Thunk = when (this) {
+    is IntLiteral      -> Thunk.strict(IntValue(num))
+    is Lambda          -> Thunk.strict(Function(parameters, body, frame))
+    is ConstructorCall -> Thunk.strict(ADTValue(constructor, arguments.map { it.eval(frame) }))
+    else               -> Thunk.lazy(frame, this)
 }

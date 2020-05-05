@@ -6,7 +6,6 @@ package hask.core
 
 import hask.core.ast.*
 import hask.core.ast.Expr.If
-import hask.core.ast.Expr.Lambda
 import hask.core.type.Type.*
 import hask.core.type.TypeScheme
 import hask.core.type.inferType

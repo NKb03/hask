@@ -15,3 +15,7 @@ fun apply(name: String, vararg arguments: Expr) = apply(ValueOf(name), *argument
 infix fun String.be(value: Expr) = Binding(this, value)
 
 fun let(vararg bindings: Binding, body: Expr) = Let(bindings.asList(), body)
+
+val String.v get(): Expr = ValueOf(this)
+
+val Int.l get(): Expr = IntLiteral(this)

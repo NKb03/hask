@@ -7,7 +7,7 @@ package hask.core.rt
 import hask.core.ast.*
 import hask.core.ast.Expr.*
 import hask.core.parse.*
-import hask.core.rt.Value.IntValue
+import hask.core.rt.NormalForm.IntValue
 import hask.core.type.Type
 import hask.core.type.Type.ParameterizedADT
 import hask.core.type.inferType
@@ -20,6 +20,10 @@ operator fun Expr.times(r: Expr) = ApplyBuiltin("*", listOf(Type.INT, Type.INT),
     IntValue((l as IntValue).value * (r as IntValue).value)
 }
 
+operator fun Expr.plus(r: Expr) = ApplyBuiltin("*", listOf(Type.INT, Type.INT), Type.INT, listOf(this, r)) { (l, r) ->
+    IntValue((l as IntValue).value + (r as IntValue).value)
+}
+
 operator fun Expr.invoke(vararg expressions: Expr): Expr = expressions.fold(this) { acc, a -> Apply(acc, a) }
 
 operator fun String.invoke(vararg expressions: Expr): Expr = ValueOf(this).invoke(*expressions)
@@ -27,9 +31,9 @@ operator fun String.invoke(vararg expressions: Expr): Expr = ValueOf(this).invok
 val fac = lambda(
     "n",
     body = Match(
-        ValueOf("n"), mapOf(
-            Pattern.Integer(0) to IntLiteral(1),
-            Pattern.Otherwise to ValueOf("n") * "fac"(ValueOf("n") - IntLiteral(1))
+        "n".v, mapOf(
+            Pattern.Integer(0) to 1.l,
+            Pattern.Otherwise to "n".v * "fac"("n".v - 1.l)
         )
     )
 )
@@ -46,15 +50,23 @@ fun empty() = ConstructorCall(Empty, emptyList())
 
 val map = lambda(
     "f", "list", body = Match(
-        ValueOf("list"), mapOf(
+        "list".v, mapOf(
             Pattern.Constructor(Empty, emptyList()) to empty(),
-            Pattern.Constructor(Cons, listOf("x", "xs")) to ("f"(ValueOf("x")) cons "map"(ValueOf("f"), ValueOf("xs")))
+            Pattern.Constructor(Cons, listOf("x", "xs")) to ("f"("x".v) cons "map"("f".v, "xs".v))
         )
     )
 )
 
 fun main() {
     tryMap()
+    tryFac()
+    val e = let("a" be "b".v + 2.l, "b" be 1.l, body = lambda("x", body = "x".v * ("a".v - "b".v)))
+    val f = e.force(StackFrame.root())
+    println(f)
+    println(f.apply(5.l.eval()))
+}
+
+private fun tryParse() {
     val input = CharInput.from("let x = 1 in add 1 x")
     val ts = tokens.parse(input).force()
     println(ts)
@@ -64,15 +76,15 @@ fun main() {
 
 private fun tryMap() {
     val source = intArrayOf(0, 1, 2, 3, 4).map(::IntLiteral).foldRight(empty()) { x, l -> x cons l }
-    val f = lambda("n", body = ValueOf("n") * ValueOf("n"))
+    val f = lambda("n", body = "n".v * "n".v)
     val expr = let("map" be map, body = "map"(f, source))
     println("Type of $expr = ${inferType(expr)}")
-    val result = expr.eval().force()
+    val result = expr.force()
     println(result)
 }
 
 private fun tryFac() {
-    val expr = let("fac" be fac, body = apply("fac", IntLiteral(10)))
+    val expr = let("fac" be fac, body = apply("fac", 10.l))
     println("Type of \n$expr:\n${inferType(expr)}")
     val result = expr.eval().force()
     println("result = $result")

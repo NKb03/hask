@@ -31,7 +31,7 @@ private fun Expr.freeVariables(env: Set<String>, collect: MutableSet<String> = m
             otherwise.freeVariables(env, collect)
         }
         is ConstructorCall -> arguments.forEach { it.freeVariables(env, collect) }
-        is Match           -> TODO()
+        is Match           -> arms.entries.flatMap { (p, e) -> e.freeVariables(env + p.boundVariables(), collect) }
         is ApplyBuiltin    -> arguments.forEach { it.freeVariables(env, collect) }
     }
     return collect
