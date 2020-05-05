@@ -7,11 +7,13 @@ import hask.hextant.view.IdentifierEditorControl
 import hask.hextant.view.ValueOfEditorControl
 import hextant.*
 import hextant.base.CompoundEditorControl
+import hextant.base.view
+import hextant.bundle.createBundle
 import hextant.completion.NoCompleter
 import hextant.core.view.*
+import hextant.core.view.ListEditorControl.*
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
-import hextant.core.view.ListEditorControl.Orientation
 import hextant.core.view.ListEditorControl.Orientation.Horizontal
 import hextant.fx.ModifierValue.DOWN
 import hextant.fx.registerShortcuts
@@ -46,7 +48,10 @@ object HaskPlugin : PluginInitializer({
         CompoundEditorControl.build(e, bundle) {
             line {
                 view(e.applied)
-                view(e.argument)
+                view(e.arguments) {
+                    set(ORIENTATION, Horizontal)
+                    set(CELL_FACTORY) { SeparatorCell("") }
+                }
             }
             styleClass.add("apply")
         }
@@ -190,7 +195,7 @@ object HaskPlugin : PluginInitializer({
     }
     view { e: IdentifierListEditor, bundle ->
         bundle[ORIENTATION] = Horizontal
-        bundle[CELL_FACTORY] = { ListEditorControl.SeparatorCell(" ") }
+        bundle[CELL_FACTORY] = { SeparatorCell("") }
         ListEditorControl(e, bundle)
     }
     view { e: TypeSchemeEditor, bundle ->

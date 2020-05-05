@@ -8,7 +8,7 @@ import hask.core.ast.Expr.*
 
 fun lambda(vararg parameters: String, body: Expr) = Lambda(parameters.asList(), body)
 
-fun apply(expr: Expr, vararg arguments: Expr) = arguments.fold(expr) { acc, a -> Apply(acc, a) }
+fun apply(function: Expr, vararg arguments: Expr) = Apply(function, arguments.toList())
 
 fun apply(name: String, vararg arguments: Expr) = apply(ValueOf(name), *arguments)
 

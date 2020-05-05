@@ -29,7 +29,7 @@ class TypeInferenceTests {
         val application = ApplyTypeInference(
             context,
             lambda,
-            IntLiteralTypeInference(context.child(), factory.createHolder()),
+            reactiveList(IntLiteralTypeInference(context.child(), factory.createHolder())),
             factory.createHolder()
         )
         application.assertType(INT)
@@ -41,7 +41,7 @@ class TypeInferenceTests {
         val factory = ConstraintsHolderFactory.unifying(context.unificator)
         val left = IntLiteralTypeInference(context.child(), factory.createHolder())
         val right = IntLiteralTypeInference(context.child(), factory.createHolder())
-        val app = ApplyTypeInference(context, left, right, factory.createHolder())
+        val app = ApplyTypeInference(context, left, reactiveList(right), factory.createHolder())
         app.errors.now shouldMatch hasSize(equalTo(1))
     }
 
@@ -55,7 +55,7 @@ class TypeInferenceTests {
         val body = ApplyTypeInference(
             bodyContext,
             ReferenceTypeInference(bodyContext.child(), ref, factory.createHolder()),
-            ReferenceTypeInference(bodyContext.child(), ref, factory.createHolder()),
+            reactiveList(ReferenceTypeInference(bodyContext.child(), ref, factory.createHolder())),
             factory.createHolder()
         )
         val lambda = LambdaTypeInference(context, parameters, body, factory.createHolder())

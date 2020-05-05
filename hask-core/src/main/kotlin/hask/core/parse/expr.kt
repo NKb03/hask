@@ -6,6 +6,7 @@ package hask.core.parse
 
 import hask.core.ast.Expr
 import hask.core.ast.Expr.Binding
+import hask.core.ast.apply
 
 val single: Parser<Token, Expr> = doParse {
     when (val tok = next()) {
@@ -72,7 +73,7 @@ val nonAppExpr: Parser<Token, Expr> = alt(let, lambda, `if`) { "Invalid expressi
 val apply: Parser<Token, Expr> = doParse {
     val left = expr()
     val right = single()
-    success(Expr.Apply(left, right))
+    success(apply(left, right))
 }
 
 val expr: Parser<Token, Expr> = alt(single, nonAppExpr, apply) { "Invalid expression" }

@@ -17,8 +17,8 @@ private fun Expr.freeVariables(env: Set<String>, collect: MutableSet<String> = m
         is ValueOf         -> if (name !in env) collect.add(name)
         is Lambda          -> body.freeVariables(env + parameters, collect)
         is Apply           -> {
-            l.freeVariables(env, collect)
-            r.freeVariables(env, collect)
+            function.freeVariables(env, collect)
+            arguments.flatMap { arg -> arg.freeVariables(env, collect) }
         }
         is Let             -> {
             val env1 = env + bindings.mapTo(mutableSetOf<String>()) { it.name }
@@ -48,13 +48,13 @@ fun Expr.inferType(
         val tyVars = List(parameters.size) { Var(namer.freshName()) }
         val newEnv = env + parameters.zip(tyVars.map { v -> TypeScheme(emptyList(), v) })
         val bodyT = body.inferType(newEnv, namer, constraints)
-        tyVars.foldRight(bodyT) { t, acc -> Func(t, acc) }
+        functionType(tyVars, bodyT)
     }
     is Apply           -> {
-        val lt = l.inferType(env, namer, constraints)
-        val rt = r.inferType(env, namer, constraints)
+        val f = function.inferType(env, namer, constraints)
+        val args = arguments.map { it.inferType(env, namer, constraints) }
         val ret = Var(namer.freshName())
-        constraints.bind(lt, Func(rt, ret))
+        constraints.bind(f, functionType(args, ret))
         ret
     }
     is Let             -> {
@@ -134,6 +134,9 @@ fun Expr.inferType(
         returnType
     }
 }
+
+fun functionType(parameters: List<Type>, returnType: Type) =
+    parameters.foldRight(returnType) { t, acc -> Func(t, acc) }
 
 fun unify(constraints: Constraints): Subst {
     if (constraints.isEmpty()) return emptyMap()

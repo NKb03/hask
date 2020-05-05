@@ -53,9 +53,9 @@ class EditorFlowTests {
             with(body.doExpand<ApplyEditor>("apply")) {
                 with(applied.doExpand<ApplyEditor>("apply")) {
                     applied.doExpandTo("id")
-                    argument.doExpandTo("id")
+                    arguments.editors.now[0].doExpandTo("id")
                 }
-                argument.doExpandTo("1")
+                arguments.editors.now[0].doExpandTo("1")
             }
         }
         root.inference.errors.now shouldEqual emptySet()
@@ -89,7 +89,7 @@ class EditorFlowTests {
                         value.doExpandTo("id")
                         value.wrapInApply()
                         with(value.editor.now as ApplyEditor) {
-                            argument.doExpandTo("1")
+                            arguments.editors.now[0].doExpandTo("1")
                         }
                     }
                     body.doExpandTo("1")
@@ -116,7 +116,7 @@ class EditorFlowTests {
         val root = ExprExpander(context)
         root.expand<ApplyEditor>("apply") {
             applied.doExpandTo("eq")
-            argument.doExpandTo("1")
+            arguments.editors.now[0].doExpandTo("1")
             inference.errors.now shouldEqual emptySet()
         }
         root.inference.assertType(Func(INT, BoolT))

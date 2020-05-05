@@ -39,7 +39,11 @@ class ExprExpander(context: Context) :
         val apply = ApplyEditor(context)
         apply.applied.setEditor(editor.copy())
         setEditor(apply)
-        views { group.getViewOf(apply.argument).focus() }
+        views {
+            val arg1 = apply.arguments.editors.now.first()
+            val view = group.getViewOf(arg1)
+            view.focus()
+        }
     }
 
     @ProvideCommand(shortName = "let", type = SingleReceiver)

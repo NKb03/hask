@@ -24,7 +24,7 @@ operator fun Expr.plus(r: Expr) = ApplyBuiltin("*", listOf(Type.INT, Type.INT), 
     IntValue((l as IntValue).value + (r as IntValue).value)
 }
 
-operator fun Expr.invoke(vararg expressions: Expr): Expr = expressions.fold(this) { acc, a -> Apply(acc, a) }
+operator fun Expr.invoke(vararg expressions: Expr): Expr = apply(this, *expressions)
 
 operator fun String.invoke(vararg expressions: Expr): Expr = ValueOf(this).invoke(*expressions)
 
@@ -62,8 +62,7 @@ fun main() {
     tryFac()
     val e = let("a" be "b".v + 2.l, "b" be 1.l, body = lambda("x", body = "x".v * ("a".v - "b".v)))
     val f = e.force(StackFrame.root())
-    println(f)
-    println(f.apply(5.l.eval()))
+    println(f.toExpr())
 }
 
 private fun tryParse() {

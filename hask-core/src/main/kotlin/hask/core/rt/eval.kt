@@ -5,101 +5,30 @@
 package hask.core.rt
 
 import hask.core.ast.Builtin
-import hask.core.ast.Builtin.Companion.BooleanT
-import hask.core.ast.Builtin.Companion.constant
-import hask.core.ast.Builtin.Companion.intOperator
 import hask.core.ast.Expr
 import hask.core.ast.Expr.*
 import hask.core.ast.Pattern.*
 import hask.core.rt.NormalForm.*
 import hask.core.rt.NormalForm.Function
 
-private sealed class ThunkState
-
-private data class Unevaluated(val frame: StackFrame, val expr: Expr) : ThunkState()
-
-private data class Evaluated(val value: NormalForm) : ThunkState()
-
-class Thunk private constructor(private var state: ThunkState) {
-    fun force(): NormalForm = when (val st = state) {
-        is Unevaluated -> st.expr.force(st.frame).also { state = Evaluated(it) }
-        is Evaluated   -> st.value
-    }
-
-    override fun toString(): String = when (val st = state) {
-        is Unevaluated -> "unevaluated ${st.expr}}"
-        is Evaluated   -> "evaluated ${st.value}"
-    }
-
-    companion object {
-        fun lazy(frame: StackFrame, expr: Expr) = Thunk(Unevaluated(frame, expr))
-
-        fun strict(value: NormalForm) = Thunk(Evaluated(value))
-    }
-}
-
-class StackFrame private constructor(
-    private val variables: MutableMap<String, Thunk>,
-    private val parent: StackFrame?
-) {
-    fun withBinding(name: String, thunk: Thunk) = StackFrame(mutableMapOf(name to thunk), parent = this)
-
-    fun copy() = StackFrame(variables.toMutableMap(), parent)
-
-    fun bindVar(name: String, thunk: Thunk) {
-        variables[name] = thunk
-    }
-
-    fun withBindings(bindings: Map<String, Thunk>) = copy().also { it.variables.putAll(bindings) }
-
-    fun getVar(name: String): Thunk =
-        variables[name] ?: parent?.getVar(name) ?: throw NoSuchElementException("Variable $name is not bound")
-
-    override fun toString(): String = buildString {
-        var f = this@StackFrame
-        while (true) {
-            println(f.variables)
-            for ((name, value) in f.variables) {
-                append("$name = $value")
-            }
-            f = f.parent ?: break
-        }
-    }
-
-    companion object {
-        private val prelude = mutableMapOf(
-            "add" to intOperator(Int::plus).eval(),
-            "mul" to intOperator(Int::times).eval(),
-            "sub" to intOperator(Int::minus).eval(),
-            "div" to intOperator(Int::div).eval(),
-            "False" to constant("False", ADTValue(Builtin.False, emptyList()), BooleanT).eval(),
-            "True" to constant("True", ADTValue(Builtin.True, emptyList()), BooleanT).eval(),
-            "eq" to Builtin.equals.eval()
-        )
-
-        fun root() = StackFrame(prelude, null)
-    }
-}
-
-internal fun NormalForm.apply(argument: Thunk): NormalForm {
-    check(this is Function) { "Cannot use $this as function" }
-    val p = parameters.first()
-    val rest = parameters.drop(1)
-    val f = frame.withBinding(p, argument)
-    return if (rest.isEmpty()) body.force(f)
-    else Function(rest, body, f)
-}
 
 fun Expr.force(frame: StackFrame = StackFrame.root()): NormalForm = when (this) {
     is IntLiteral      -> IntValue(num)
     is ValueOf         -> frame.getVar(name).force()
     is Lambda          -> Function(parameters, body, frame)
-    is Apply           -> l.force(frame).apply(r.eval(frame))
+    is Apply           -> {
+        val f = function.force(frame)
+        check(f is Function) { "Cannot use $this as function" }
+        val args = arguments.map { it.eval(frame) }
+        val newFrame = frame.withBindings(f.parameters.zip(args))
+        val rest = f.parameters.drop(args.size)
+        if (rest.isEmpty()) f.body.force(newFrame)
+        else Function(rest, f.body, newFrame)
+    }
     is Let             -> {
-        val newFrame = frame.copy()
+        val newFrame = frame.child()
         for ((name, value) in bindings) {
-            val thunk = value.eval(newFrame)
-            newFrame.bindVar(name, thunk)
+            newFrame.put(name, value.eval(newFrame))
         }
         body.force(newFrame)
     }
@@ -117,7 +46,7 @@ fun Expr.force(frame: StackFrame = StackFrame.root()): NormalForm = when (this) 
                 is Constructor -> {
                     val value = (expr.force(frame) as ADTValue)
                     if (value.constructor == pattern.constructor) {
-                        val bindings = pattern.names.zip(value.fields).toMap()
+                        val bindings = pattern.names.zip(value.fields)
                         return body.force(frame.withBindings(bindings))
                     }
                 }
@@ -137,4 +66,22 @@ fun Expr.eval(frame: StackFrame = StackFrame.root()): Thunk = when (this) {
     is Lambda          -> Thunk.strict(Function(parameters, body, frame))
     is ConstructorCall -> Thunk.strict(ADTValue(constructor, arguments.map { it.eval(frame) }))
     else               -> Thunk.lazy(frame, this)
+}
+
+fun Expr.substitute(subst: Map<String, Expr>): Expr = when (this) {
+    is IntLiteral      -> this
+    is ValueOf         -> subst[name] ?: this
+    is Lambda          -> Lambda(parameters, body.substitute(subst - parameters))
+    is Apply           -> Apply(function.substitute(subst), arguments.map { it.substitute(subst) })
+    is Let             -> {
+        val s = subst - bindings.map { it.name }
+        Let(bindings.map { (n, v) -> Binding(n, v.substitute(s)) }, body.substitute(s))
+    }
+    is If              -> If(cond.substitute(subst), then.substitute(subst), otherwise.substitute(subst))
+    is ConstructorCall -> ConstructorCall(constructor, arguments.map { it.substitute(subst) })
+    is Match           -> Match(
+        expr.substitute(subst),
+        arms.mapValues { (p, v) -> v.substitute(subst - p.boundVariables()) }
+    )
+    is ApplyBuiltin    -> ApplyBuiltin(name, parameters, returnType, arguments.map { it.substitute(subst) }, function)
 }

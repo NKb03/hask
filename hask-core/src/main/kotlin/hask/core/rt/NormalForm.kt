@@ -6,6 +6,7 @@ package hask.core.rt
 
 import hask.core.ast.ADTConstructor
 import hask.core.ast.Expr
+import hask.core.ast.Expr.*
 
 sealed class NormalForm {
     data class IntValue(val value: Int) : NormalForm() {
@@ -34,5 +35,11 @@ sealed class NormalForm {
             this.constructor == other.constructor &&
                     this.fields.map { it.force() } == other.fields.map { it.force() }
         else                                  -> false
+    }
+
+    fun toExpr(): Expr = when (this) {
+        is IntValue -> IntLiteral(value)
+        is ADTValue -> ConstructorCall(constructor, fields.map { it.force().toExpr() })
+        is Function -> Lambda(parameters, body.substitute(frame.env().mapValues { (_, v) -> v.toExpr() }))
     }
 }

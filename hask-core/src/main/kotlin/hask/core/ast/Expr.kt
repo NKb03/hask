@@ -20,8 +20,8 @@ sealed class Expr {
         override fun toString(): String = "λ${parameters.joinToString(" ")} -> $body"
     }
 
-    data class Apply(val l: Expr, val r: Expr) : Expr() {
-        override fun toString(): String = "($l $r)"
+    data class Apply(val function: Expr, val arguments: List<Expr>) : Expr() {
+        override fun toString(): String = "($function ${arguments.joinToString(" ")})"
     }
 
     data class Binding(val name: String, val value: Expr)
