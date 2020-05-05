@@ -17,13 +17,7 @@ fun Expr.force(frame: StackFrame = StackFrame.root()): NormalForm = when (this) 
     is ValueOf         -> frame.getVar(name).force()
     is Lambda          -> Function(parameters, body, frame)
     is Apply           -> {
-        val f = function.force(frame)
-        check(f is Function) { "Cannot use $this as function" }
-        val args = arguments.map { it.eval(frame) }
-        val newFrame = frame.withBindings(f.parameters.zip(args))
-        val rest = f.parameters.drop(args.size)
-        if (rest.isEmpty()) f.body.force(newFrame)
-        else Function(rest, f.body, newFrame)
+        function.force(frame).apply(arguments.map { it.eval(frame) })
     }
     is Let             -> {
         val newFrame = frame.child()
@@ -58,6 +52,16 @@ fun Expr.force(frame: StackFrame = StackFrame.root()): NormalForm = when (this) 
     is ApplyBuiltin    -> {
         val values = arguments.map { it.force(frame) }
         function(values)
+    }
+}
+
+fun NormalForm.apply(arguments: List<Thunk>): NormalForm {
+    check(this is Function) { "Cannot use $this as function" }
+    val newFrame = this.frame.withBindings(parameters.zip(arguments))
+    return when {
+        parameters.size > arguments.size -> Function(parameters.drop(arguments.size), body, newFrame)
+        parameters.size < arguments.size -> body.force(newFrame).apply(arguments.drop(parameters.size))
+        else                             -> body.force(newFrame)
     }
 }
 
