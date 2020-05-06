@@ -40,6 +40,9 @@ sealed class NormalForm {
     fun toExpr(): Expr = when (this) {
         is IntValue -> IntLiteral(value)
         is ADTValue -> ConstructorCall(constructor, fields.map { it.force().toExpr() })
-        is Function -> Lambda(parameters, body.substitute(frame.env().mapValues { (_, v) -> v.toExpr() }))
+        is Function -> Let(
+            frame.bindings().entries.map { (n, v) -> Binding(n, v.toExpr()) },
+            Lambda(parameters, body)
+        )
     }
 }

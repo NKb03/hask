@@ -7,6 +7,8 @@ package hask.core.type
 import hask.core.ast.Builtin
 import hask.core.ast.Expr
 import hask.core.ast.Expr.*
+import hask.core.condense
+import hask.core.topologicalSort
 import hask.core.type.Type.*
 import java.util.*
 
@@ -59,17 +61,15 @@ fun Expr.inferType(
     }
     is Let             -> {
         val vertices = bindings.withIndex().associate { (idx, b) -> b.name to idx }
-        val adj = Array(bindings.size) { mutableListOf<Int>() }
+        val graph = List(bindings.size) { mutableListOf<Int>() }
         for ((i, b) in bindings.withIndex()) {
             for (v in b.value.freeVariables(env.keys)) {
                 val j = vertices[v] ?: continue
-                adj[j].add(i)
+                graph[j].add(i)
             }
         }
-        val scc = SCCs(adj)
-        scc.compute()
         val env2 = env.toMutableMap()
-        for (comp in scc.topologicalSort()) {
+        for (comp in graph.condense().topologicalSort()) {
             val typeVars = comp.associate { i -> bindings[i].name to Var(namer.freshName()) }
             val env1 = env2 + typeVars.mapValues { (_, t) -> TypeScheme(emptyList(), t) }
             val c = mutableListOf<Constraint>()

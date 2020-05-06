@@ -31,7 +31,7 @@ class StackFrame private constructor(
         }
     }
 
-    fun env(): Map<String, NormalForm> {
+    fun bindings(): Map<String, NormalForm> {
         val res = mutableMapOf<String, NormalForm>()
         var f = this
         while (true) {

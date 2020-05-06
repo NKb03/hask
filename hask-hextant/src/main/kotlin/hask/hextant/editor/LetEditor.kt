@@ -9,13 +9,12 @@ import hask.core.ast.Expr.Let
 import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.eval.EvaluationEnv.Resolution
+import hask.hextant.ti.DependencyGraph
 import hask.hextant.ti.LetTypeInference
 import hask.hextant.ti.env.TIContext
 import hextant.*
 import hextant.base.CompoundEditor
 import reaktive.set.asSet
-import reaktive.set.binding.values
-import reaktive.value.binding.map
 import reaktive.value.now
 
 class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let> {
@@ -39,17 +38,21 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
         }
     }
 
-    private val bound = bindings.editors.asSet().map { b -> b.name.result.map { it.orNull() } }.values()
+    private val dependencyGraph = DependencyGraph(bindings.editors.map { b -> b.name.result to b.value.freeVariables })
 
     override val freeVariables =
-        bindings.editors.asSet().flatMap { it.value.freeVariables } + body.freeVariables - bound
+        bindings.editors.asSet()
+            .flatMap { it.value.freeVariables } + body.freeVariables - dependencyGraph.boundVariables
 
     override val inference = LetTypeInference(
         context[HaskInternal, TIContext],
-        bindings.editors.map { Triple(it.name.result, it.value.inference, it.value.freeVariables) },
+        ::bindings,
+        dependencyGraph,
         body.inference,
         context.createConstraintsHolder()
     )
+
+    private fun bindings() = bindings.editors.now.map { Pair(it.name.result.now, it.value.inference) }
 
     override fun buildEnv(env: EvaluationEnv) {
         for (b in bindings.editors.now) {
@@ -65,7 +68,10 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
         return this
     }
 
+    override fun canEvalOneStep(): Boolean = true
+
     override fun evaluateOneStep(): ExprEditor<Expr> {
+        inference
         val env = mutableMapOf<String, ExprEditor<Expr>>()
         for (b in bindings.editors.now) {
             b.name.result.now.ifOk { name ->

@@ -4,46 +4,40 @@
 
 package hask.hextant.ti
 
-import hask.core.type.*
+import hask.core.type.Type
 import hask.core.type.Type.Var
-import hask.hextant.ti.env.TIEnv
+import hask.core.type.TypeScheme
 import hask.hextant.ti.env.TIContext
 import hask.hextant.ti.unify.ConstraintsHolder
 import hask.hextant.ti.unify.bind
 import hextant.*
 import reaktive.Observer
-import reaktive.list.ReactiveList
-import reaktive.list.observeEach
-import reaktive.set.ReactiveSet
-import reaktive.set.asSet
-import reaktive.set.binding.values
+import reaktive.event.subscribe
 import reaktive.value.*
-import reaktive.value.binding.*
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.map
 
 class LetTypeInference(
     context: TIContext,
-    private val bindings: ReactiveList<Triple<EditorResult<String>, TypeInference, ReactiveSet<String>>>,
+    private val bindings: () -> List<Pair<CompileResult<String>, TypeInference>>,
+    private val dependencyGraph: DependencyGraph,
     private val bodyType: TypeInference,
     holder: ConstraintsHolder
 ) : AbstractTypeInference(context, holder) {
     private val observers = mutableListOf<Observer>()
-    private val boundVars = bindings.asSet().map { b -> b.first.map { name -> name.orNull() } }.values()
-    private val o1 = bindings.observe { recompute() }
-    private val o2 = bindings.observeEach { (name, _, fvs) ->
-        fvs.observeSet { ch -> if (ch.element in boundVars.now) recompute() } and name.observe { _ -> recompute() }
-    }
+    private val graphSubscription = dependencyGraph.invalidated.subscribe { _ -> recompute() }
     private val usedVariables = mutableSetOf<String>()
 
     init {
-        addBindings()
+        addBindings(bindings())
     }
 
-    private fun clear() {
+    private fun clear(bindings: List<Pair<CompileResult<String>, TypeInference>>) {
         for (it in observers) it.kill()
         observers.clear()
         holder.clearConstraints()
         clearErrors()
-        for (b in bindings.now) {
+        for (b in bindings) {
             val e = env(b)
             e.clear()
         }
@@ -52,32 +46,32 @@ class LetTypeInference(
         usedVariables.clear()
     }
 
-    private fun env(b: Triple<EditorResult<String>, TypeInference, ReactiveSet<String>>) = env(b.second)
+    private fun env(b: Pair<CompileResult<String>, TypeInference>) = env(b.second)
 
     private fun env(inf: TypeInference) = inf.context.env
 
     private fun recompute() {
-        clear()
-        addBindings()
+        val b = bindings()
+        clear(b)
+        addBindings(b)
     }
 
-    private fun addBindings() {
-        val vertices = bindings.now
-        val topo = computeSCCs(vertices)
+    private fun addBindings(vertices: List<Pair<CompileResult<String>, TypeInference>>) {
+        val ts = dependencyGraph.topologicallySortedSCCs()
         val env = mutableMapOf<String, ReactiveValue<CompileResult<TypeScheme>>>()
         val typeVars = List(vertices.size) { freshTypeVar() }
-        computePrincipalTypes(topo, vertices, env, typeVars)
-        addBackReferences(topo, vertices, typeVars)
+        computePrincipalTypes(ts, vertices, env, typeVars)
+        addBackReferences(ts, vertices, typeVars)
         addEnvToBody(env)
     }
 
     private fun computePrincipalTypes(
-        topo: List<List<Int>>,
-        vertices: List<Triple<EditorResult<String>, TypeInference, ReactiveSet<String>>>,
+        ts: List<Collection<Int>>,
+        vertices: List<Pair<CompileResult<String>, TypeInference>>,
         env: MutableMap<String, ReactiveValue<CompileResult<TypeScheme>>>,
         typeVars: List<Var>
     ) {
-        for (comp in topo) {
+        for (comp in ts) {
             for (i in comp) {
                 val e = env(vertices[i])
                 for ((name, type) in env) {
@@ -85,17 +79,18 @@ class LetTypeInference(
                     observers.add(o)
                 }
                 for (j in comp) {
-                    val name = vertices[j].first.now.orNull() ?: continue
+                    val name = vertices[j].first.orNull() ?: continue
                     e.bind(name, ok(TypeScheme(emptyList(), typeVars[j])))
                 }
             }
             for (i in comp) {
-                val n = vertices[i].first.now.orNull() ?: continue
+                val n = vertices[i].first.orNull() ?: continue
                 val inf = vertices[i].second
                 val defTypeVar = typeVars[i]
                 holder.bind(reactiveValue(ok(defTypeVar)), inf.type, this)
                 env[n] = inf.type.flatMap { t ->
-                    if (t is Ok) context.unificator.substitute(t.value).flatMap { context.env.generalize(it) }.map { ok(it) }
+                    if (t is Ok) context.unificator.substitute(t.value).flatMap { context.env.generalize(it) }
+                        .map { ok(it) }
                     else reactiveValue(t.castError<Type, TypeScheme>())
                 }
             }
@@ -103,16 +98,16 @@ class LetTypeInference(
     }
 
     private fun addBackReferences(
-        topo: List<List<Int>>,
-        vertices: List<Triple<EditorResult<String>, TypeInference, ReactiveSet<String>>>,
+        ts: List<Collection<Int>>,
+        vertices: List<Pair<CompileResult<String>, TypeInference>>,
         typeVars: List<Var>
     ) {
-        for (i in topo.indices) {
+        for (i in ts.indices) {
             for (j in 0 until i) {
-                for (u in topo[i]) {
-                    val name = vertices[u].first.now.orNull() ?: continue
+                for (u in ts[i]) {
+                    val name = vertices[u].first.orNull() ?: continue
                     val type = typeVars[u]
-                    for (v in topo[j]) {
+                    for (v in ts[j]) {
                         val e = env(vertices[v])
                         e.bind(name, ok(TypeScheme(emptyList(), type)))
                     }
@@ -135,30 +130,13 @@ class LetTypeInference(
         return Var(n)
     }
 
-    private fun computeSCCs(vertices: List<Triple<EditorResult<String>, TypeInference, ReactiveSet<String>>>): List<List<Int>> {
-        val index = mutableMapOf<String, Int>()
-        for ((idx, b) in vertices.withIndex()) {
-            b.first.now.ifOk { name -> index[name] = idx }
-        }
-        val adj = Array(vertices.size) { mutableListOf<Int>() }
-        for ((i, b) in vertices.withIndex()) {
-            for (v in b.third.now) {
-                val j = index[v] ?: continue
-                adj[j].add(i)
-            }
-        }
-        val scc = SCCs(adj)
-        scc.compute()
-        return scc.topologicalSort()
-    }
-
     override fun dispose() {
         super.dispose()
-        clear()
-        o1.kill()
-        o2.kill()
+        val b = bindings()
+        clear(b)
+        graphSubscription.cancel()
         bodyType.dispose()
-        bindings.now.forEach { it.second.dispose() }
+        b.forEach { it.second.dispose() }
     }
 
     override val type get() = bodyType.type
