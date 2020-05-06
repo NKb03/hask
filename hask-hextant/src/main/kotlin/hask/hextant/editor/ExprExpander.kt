@@ -92,7 +92,12 @@ class ExprExpander(context: Context) :
     override fun substitute(env: Map<String, ExprEditor<Expr>>): ExprExpander {
         val e = this.editor.now ?: return this
         val new = e.substitute(env)
-        if (new !== e) setEditor(new.copy())
+        if (new is ExprExpander) {
+            val c = new.editor.now
+            if (c != null) setEditor(c.copy())
+            else reset()
+        }
+        else if (new !== e) setEditor(new.copy())
         return this
     }
 

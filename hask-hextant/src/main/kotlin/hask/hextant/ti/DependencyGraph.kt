@@ -21,16 +21,16 @@ class DependencyGraph(private val input: ReactiveList<Pair<EditorResult<String>,
     private val invalidate = unitEvent()
     val invalidated = invalidate.stream
 
-    private val observer = input.observeEach { (n, v) ->
-        n.observe { _ -> invalidate() } and v.observeSet { ch -> invalidate() }
-    } and input.observe { _ -> invalidate() }
+    val boundVariables = input.asSet().map { (name, _) -> name.map { it.orNull() } }.values()
 
+    private val observer = input.observeEach { (n, v) ->
+        n.observe { _ -> invalidate() } and v.observeSet { ch -> if (ch.element in boundVariables.now) invalidate() }
+    } and input.observe { _ -> invalidate() }
     private val adjacencyList = Cache { computeAdjacencyList() }
     private val condensedGraph = Cache { adjacencyList.get().condense() }
     private val topologicalSorting = Cache { adjacencyList.get().topologicalSort() }
-    private val topologicallySortedSCCs = Cache { condensedGraph.get().topologicalSort() }
 
-    val boundVariables = input.asSet().map { (name, _) -> name.map { it.orNull() } }.values()
+    private val topologicallySortedSCCs = Cache { condensedGraph.get().topologicalSort() }
 
     private fun invalidate() {
         adjacencyList.invalidate()
@@ -45,7 +45,17 @@ class DependencyGraph(private val input: ReactiveList<Pair<EditorResult<String>,
         for ((i, b) in input.now.withIndex()) {
             b.first.now.ifOk { name -> index[name] = i }
         }
-        return input.now.map { b -> b.second.now.mapNotNull { dep -> index[dep] } }
+        val adj = List(input.now.size) { mutableListOf<Int>() }
+        for (b in input.now) {
+            b.first.now.ifOk { name ->
+                for (fv in b.second.now) {
+                    val u = index[fv]
+                    val v = index.getValue(name)
+                    if (u != null) adj[u].add(v)
+                }
+            }
+        }
+        return adj
     }
 
     fun topologicallySortedSCCs() = topologicallySortedSCCs.get()

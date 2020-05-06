@@ -37,7 +37,7 @@ class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEdit
         ok(Lambda(params, body))
     }
 
-    override val freeVariables = body.freeVariables - parameters.result.map { it.orNull() }.toSet()
+    override val freeVariables = body.freeVariables - parameters.results.asSet().map { it.orNull() }
 
     override val inference = LambdaTypeInference(
         context[HaskInternal, TIContext],

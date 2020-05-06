@@ -221,6 +221,13 @@ object HaskPlugin : PluginInitializer({
         applicableIf { it.editor.now?.canEvalOneStep() ?: false }
         executing { exp, _ -> exp.evaluateOneStep() }
     }
+    registerCommand<ExprEditor<*>, String> {
+        name = "free variables"
+        shortName = "fvs"
+        description = "Prints all free variables of the expression"
+        type = SingleReceiver
+        executing { e, _ -> e.freeVariables.now.joinToString() }
+    }
     inspection(::typeOkInspection)
     inspection(::typeConstraintInspection)
     //    inspection(::betaConversion)

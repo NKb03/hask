@@ -29,17 +29,17 @@ class LambdaTypeInference(
             is Added    -> {
                 val v = context.namer.freshName()
                 typeVars.add(ch.index, v)
-                bind(ch.element, Var(v))
+                bind(ch.added, Var(v))
             }
             is Removed  -> {
                 val v = typeVars[ch.index]
                 typeVars.removeAt(ch.index)
                 context.namer.release(v)
-                unbind(ch.element)
+                unbind(ch.removed)
             }
             is Replaced -> {
-                unbind(ch.old)
-                bind(ch.new, Var(typeVars[ch.index]))
+                unbind(ch.removed)
+                bind(ch.added, Var(typeVars[ch.index]))
             }
         }
         recomputeType()
