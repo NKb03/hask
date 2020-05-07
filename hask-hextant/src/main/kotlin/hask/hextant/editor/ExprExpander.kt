@@ -49,7 +49,7 @@ class ExprExpander(context: Context) :
     fun wrapInApply() {
         val editor = editor.now ?: return
         val apply = ApplyEditor(context)
-        apply.applied.setEditor(editor.copy())
+        apply.applied.setEditor(editor)
         setEditor(apply)
         views {
             val arg1 = apply.arguments.editors.now.first()
@@ -63,7 +63,7 @@ class ExprExpander(context: Context) :
         val editor = editor.now ?: return
         val let = LetEditor(context)
         val b = let.bindings.addLast()!!
-        b.value.setEditor(editor.copy())
+        b.value.setEditor(editor)
         setEditor(let)
     }
 
@@ -95,9 +95,9 @@ class ExprExpander(context: Context) :
         val new = e.evaluateOneStep()
         if (new is ExprExpander) {
             val c = new.editor.now
-            if (c != null) setEditor(c.copy())
+            if (c != null) setEditor(c)
             else reset()
-        } else if (new !== e) setEditor(new.copy())
+        } else if (new !== e) setEditor(new)
         return this
     }
 
@@ -106,9 +106,9 @@ class ExprExpander(context: Context) :
         val new = e.substitute(env)
         if (new is ExprExpander) {
             val c = new.editor.now
-            if (c != null) setEditor(c.copy())
+            if (c != null) setEditor(c)
             else reset()
-        } else if (new !== e) setEditor(new.copy())
+        } else if (new !== e) setEditor(new)
         return this
     }
 

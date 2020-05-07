@@ -62,19 +62,18 @@ class ApplyEditor private constructor(
         val body = applied.body.editor.now ?: return this
         val args = arguments.editors.now
         val env = parameters.zip(args).toMap()
-        val b = body.substitute(env).copy()
+        val b = body.substitute(env)
         return when {
             args.size < parameters.size -> {
                 val e = LambdaEditor(context)
-                val params = parameters.drop(args.size).map { name -> IdentifierEditor(e.context, name) }
-                e.parameters.setEditors(params)
+                e.parameters.setEditors(applied.parameters.editors.now.drop(args.size))
                 e.body.paste(b)
                 e
             }
             args.size > parameters.size -> {
                 val e = ApplyEditor(context)
                 e.applied.paste(b)
-                e.arguments.setEditors(args.drop(parameters.size).map { it.copy() })
+                e.arguments.setEditors(args.drop(parameters.size))
                 e
             }
             else                        -> b
