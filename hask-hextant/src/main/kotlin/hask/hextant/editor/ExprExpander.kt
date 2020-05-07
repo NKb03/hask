@@ -7,14 +7,16 @@ package hask.hextant.editor
 import hask.core.ast.Expr
 import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
-import hask.hextant.ti.*
+import hask.hextant.ti.ExpanderTypeInference
 import hask.hextant.ti.env.TIContext
-import hextant.*
+import hextant.Context
 import hextant.command.Command.Type.SingleReceiver
 import hextant.command.meta.ProvideCommand
-import hextant.core.editor.*
-import reaktive.set.*
+import hextant.copy
+import hextant.core.editor.ConfiguredExpander
+import hextant.core.editor.ExpanderConfig
 import reaktive.set.binding.flattenToSet
+import reaktive.set.emptyReactiveSet
 import reaktive.value.binding.map
 import reaktive.value.now
 
@@ -26,10 +28,21 @@ class ExprExpander(context: Context) :
 
     override val freeVariables = editor.map { it?.freeVariables ?: emptyReactiveSet() }.flattenToSet()
 
+    override fun onExpansion(editor: ExprEditor<Expr>) {
+        if (this.inference.active) {
+            println("expanded, activating ${editor.result.now}")
+            editor.inference.activate()
+        }
+    }
+
+    override fun onReset(editor: ExprEditor<Expr>) {
+        println("reset, deactivating ${editor.result.now}")
+        editor.inference.deactivate()
+    }
+
     override val inference = ExpanderTypeInference(
-        editor,
-        context[HaskInternal, TIContext],
-        context.createConstraintsHolder()
+        editor.map { it?.inference },
+        context[HaskInternal, TIContext]
     )
 
     @ProvideCommand(shortName = "apply", type = SingleReceiver)
@@ -84,8 +97,7 @@ class ExprExpander(context: Context) :
             val c = new.editor.now
             if (c != null) setEditor(c.copy())
             else reset()
-        }
-        else if (new !== e) setEditor(new.copy())
+        } else if (new !== e) setEditor(new.copy())
         return this
     }
 
@@ -96,8 +108,7 @@ class ExprExpander(context: Context) :
             val c = new.editor.now
             if (c != null) setEditor(c.copy())
             else reset()
-        }
-        else if (new !== e) setEditor(new.copy())
+        } else if (new !== e) setEditor(new.copy())
         return this
     }
 

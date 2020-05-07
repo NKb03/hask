@@ -12,6 +12,8 @@ interface Unificator {
 
     fun remove(constraint: Constraint)
 
+    fun removeAll(cs: Collection<Constraint>)
+
     fun substitutions(): Map<String, Type>
 
     fun substitute(type: Type): ReactiveValue<Type>

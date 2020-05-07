@@ -17,7 +17,7 @@ class GroupedUnificator : Unificator {
     private val types = mutableMapOf<String, MutableSet<ReactiveVariable<Type>>>()
 
     override fun add(constraint: Constraint) {
-//        println("adding $constraint")
+        //        println("adding $constraint")
         unify(constraint.a, constraint.b, constraint)
     }
 
@@ -29,7 +29,7 @@ class GroupedUnificator : Unificator {
     }
 
     override fun remove(constraint: Constraint) {
-//        println("removing $constraint")
+        //        println("removing $constraint")
         val vars = mutableSetOf<String>()
         val c = mutableSetOf<Constraint>()
         for (v in constraint.fvs) dfs(v, vars)
@@ -44,6 +44,10 @@ class GroupedUnificator : Unificator {
         for (cstr in c) {
             if (cstr != constraint) add(cstr)
         }
+    }
+
+    override fun removeAll(cs: Collection<Constraint>) {
+        for (c in cs) remove(c)
     }
 
     private fun unify(a: Type, b: Type, c: Constraint) {

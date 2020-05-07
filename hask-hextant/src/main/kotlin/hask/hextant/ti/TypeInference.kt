@@ -12,11 +12,15 @@ import reaktive.set.ReactiveSet
 import reaktive.value.ReactiveValue
 
 interface TypeInference : ErrorDisplay {
-    fun dispose()
+    val active: Boolean
 
     val context: TIContext
 
     val type: ReactiveValue<CompileResult<Type>>
 
     val errors: ReactiveSet<Pair<Type, Type>>
+
+    fun activate()
+
+    fun deactivate()
 }

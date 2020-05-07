@@ -40,11 +40,8 @@ class ApplyEditor private constructor(
     override val inference = ApplyTypeInference(
         context[HaskInternal, TIContext],
         applied.inference,
-        arguments.editors.map { it.inference },
-        context.createConstraintsHolder()
+        arguments.editors.map { it.inference }
     )
-
-    override val type = inference.type
 
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {
         applied.collectReferences(variable, acc)

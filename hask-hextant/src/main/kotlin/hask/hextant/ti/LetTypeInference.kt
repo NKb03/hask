@@ -8,11 +8,7 @@ import hask.core.type.Type
 import hask.core.type.Type.Var
 import hask.core.type.TypeScheme
 import hask.hextant.ti.env.TIContext
-import hask.hextant.ti.unify.ConstraintsHolder
-import hask.hextant.ti.unify.bind
 import hextant.*
-import reaktive.Observer
-import reaktive.event.subscribe
 import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
@@ -21,45 +17,29 @@ class LetTypeInference(
     context: TIContext,
     private val bindings: () -> List<Pair<CompileResult<String>, TypeInference>>,
     private val dependencyGraph: DependencyGraph,
-    private val bodyType: TypeInference,
-    holder: ConstraintsHolder
-) : AbstractTypeInference(context, holder) {
-    private val observers = mutableListOf<Observer>()
-    private val graphSubscription = dependencyGraph.invalidated.subscribe { _ -> recompute() }
-    private val usedVariables = mutableSetOf<String>()
-
+    private val body: TypeInference
+) : AbstractTypeInference(context) {
     init {
-        addBindings(bindings())
+        dependsOn(dependencyGraph.invalidated)
     }
 
-    private fun clear(bindings: List<Pair<CompileResult<String>, TypeInference>>) {
-        for (it in observers) it.kill()
-        observers.clear()
-        holder.clearConstraints()
-        clearErrors()
-        for (b in bindings) {
+    override fun doReset() {
+        for (b in bindings()) {
             val e = env(b)
             e.clear()
         }
-        env(bodyType).clear()
-        for (n in usedVariables) context.namer.release(n)
-        usedVariables.clear()
+        env(body).clear()
     }
 
     private fun env(b: Pair<CompileResult<String>, TypeInference>) = env(b.second)
 
     private fun env(inf: TypeInference) = inf.context.env
 
-    private fun recompute() {
-        val b = bindings()
-        clear(b)
-        addBindings(b)
-    }
-
-    private fun addBindings(vertices: List<Pair<CompileResult<String>, TypeInference>>) {
+    override fun doRecompute() {
+        val vertices = bindings()
         val ts = dependencyGraph.topologicallySortedSCCs()
         val env = mutableMapOf<String, ReactiveValue<CompileResult<TypeScheme>>>()
-        val typeVars = List(vertices.size) { freshTypeVar() }
+        val typeVars = List(vertices.size) { Var(freshName()) }
         computePrincipalTypes(ts, vertices, env, typeVars)
         addBackReferences(ts, vertices, typeVars)
         addEnvToBody(env)
@@ -76,7 +56,7 @@ class LetTypeInference(
                 val e = env(vertices[i])
                 for ((name, type) in env) {
                     val o = type.forEach { t -> e.bind(name, t) }
-                    observers.add(o)
+                    addObserver(o, killOnReset = true)
                 }
                 for (j in comp) {
                     val name = vertices[j].first.orNull() ?: continue
@@ -87,9 +67,10 @@ class LetTypeInference(
                 val n = vertices[i].first.orNull() ?: continue
                 val inf = vertices[i].second
                 val defTypeVar = typeVars[i]
-                holder.bind(reactiveValue(ok(defTypeVar)), inf.type, this)
+                bind(inf.type, defTypeVar)
                 env[n] = inf.type.flatMap { t ->
-                    if (t is Ok) context.unificator.substitute(t.value).flatMap { context.env.generalize(it) }
+                    if (t is Ok) context.unificator.substitute(t.value)
+                        .flatMap { context.env.generalize(it) }
                         .map { ok(it) }
                     else reactiveValue(t.castError<Type, TypeScheme>())
                 }
@@ -118,26 +99,13 @@ class LetTypeInference(
 
     private fun addEnvToBody(env: Map<String, ReactiveValue<CompileResult<TypeScheme>>>) {
         for ((name, type) in env) {
-            val e = bodyType.context.env
+            val e = body.context.env
             val o = type.forEach { t -> e.bind(name, t) }
-            observers.add(o)
+            addObserver(o, killOnReset = true)
         }
     }
 
-    private fun freshTypeVar(): Var {
-        val n = context.namer.freshName()
-        usedVariables.add(n)
-        return Var(n)
-    }
+    override fun children(): Collection<TypeInference> = bindings().map { it.second } + body
 
-    override fun dispose() {
-        super.dispose()
-        val b = bindings()
-        clear(b)
-        graphSubscription.cancel()
-        bodyType.dispose()
-        b.forEach { it.second.dispose() }
-    }
-
-    override val type get() = bodyType.type
+    override val type get() = body.type
 }

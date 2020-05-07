@@ -51,11 +51,16 @@ class SimpleUnificator : Unificator {
 
     private fun subst(t: Type) = t.apply(substitutions())
 
-    override fun remove(constraint: Constraint) {
+    override fun removeAll(cs: Collection<Constraint>) {
+        if (cs.isEmpty()) return
         for (c in constraints) c.display.clearErrors()
-        constraints.remove(constraint)
+        constraints.removeAll(cs)
         subst.clear()
         for (c in constraints) unify(c.a, c.b, c)
+    }
+
+    override fun remove(constraint: Constraint) {
+        removeAll(listOf(constraint))
     }
 
     override fun substitutions(): Map<String, Type> =

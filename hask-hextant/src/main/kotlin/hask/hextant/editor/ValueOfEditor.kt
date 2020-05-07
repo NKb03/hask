@@ -25,8 +25,7 @@ class ValueOfEditor(context: Context) : TokenEditor<ValueOf, ValueOfEditorView>(
 
     override val inference = ReferenceTypeInference(
         context[HaskInternal, TIContext],
-        result.mapResult { it.name },
-        context.createConstraintsHolder()
+        result.mapResult { it.name }
     )
 
     override fun compile(token: String): CompileResult<ValueOf> = token

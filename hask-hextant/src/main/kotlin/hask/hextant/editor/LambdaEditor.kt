@@ -9,16 +9,12 @@ import hask.core.ast.Expr.Lambda
 import hask.core.type.Type.Var
 import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
-import hask.hextant.eval.EvaluationEnv.Resolution
 import hask.hextant.eval.EvaluationEnv.Resolution.Parameter
 import hask.hextant.ti.*
 import hask.hextant.ti.env.TIContext
 import hextant.*
 import hextant.base.CompoundEditor
-import reaktive.collection.binding.any
 import reaktive.set.*
-import reaktive.value.binding.map
-import reaktive.value.now
 
 class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEditor<Lambda> {
     val parameters by child(IdentifierListEditor(context))
@@ -42,8 +38,7 @@ class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEdit
     override val inference = LambdaTypeInference(
         context[HaskInternal, TIContext],
         parameters.results,
-        body.inference,
-        context.createConstraintsHolder()
+        body.inference
     )
 
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {
@@ -56,7 +51,7 @@ class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEdit
         for ((index, p) in parameters.results.now.withIndex()) {
             p.ifOk { name ->
                 val v = inference.typeVars[index]
-                val type = inference.context.unificator.substituteNow(Var(v))
+                val type = inference.context.unificator.substituteNow(v)
                 env.put(name, Parameter(type))
             }
         }

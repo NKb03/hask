@@ -48,8 +48,7 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
         context[HaskInternal, TIContext],
         ::bindings,
         dependencyGraph,
-        body.inference,
-        context.createConstraintsHolder()
+        body.inference
     )
 
     private fun bindings() = bindings.editors.now.map { Pair(it.name.result.now, it.value.inference) }

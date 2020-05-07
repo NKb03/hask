@@ -11,7 +11,6 @@ import hask.hextant.ti.env.TIContext
 import hextant.*
 import hextant.core.editor.TokenEditor
 import hextant.core.view.TokenEditorView
-import reaktive.set.ReactiveSet
 import reaktive.set.emptyReactiveSet
 
 class IntLiteralEditor(context: Context) : TokenEditor<IntLiteral, TokenEditorView>(context), ExprEditor<IntLiteral> {
@@ -26,5 +25,5 @@ class IntLiteralEditor(context: Context) : TokenEditor<IntLiteral, TokenEditorVi
 
     override val freeVariables = emptyReactiveSet<String>()
 
-    override val inference = IntLiteralTypeInference(context[HaskInternal, TIContext], context.createConstraintsHolder())
+    override val inference = IntLiteralTypeInference(context[HaskInternal, TIContext])
 }

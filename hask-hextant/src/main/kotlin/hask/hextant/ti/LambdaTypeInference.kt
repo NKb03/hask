@@ -5,83 +5,46 @@
 package hask.hextant.ti
 
 import hask.core.type.Type
-import hask.core.type.Type.Func
 import hask.core.type.Type.Var
+import hask.core.type.functionType
 import hask.hextant.ti.env.TIContext
-import hask.hextant.ti.unify.ConstraintsHolder
 import hextant.*
-import reaktive.list.ListChange.*
+import reaktive.dependencies
+import reaktive.event.unitEvent
 import reaktive.list.ReactiveList
-import reaktive.value.*
+import reaktive.set.asSet
+import reaktive.value.binding.binding
+import reaktive.value.now
 
 class LambdaTypeInference(
     context: TIContext,
     private val parameters: ReactiveList<CompileResult<String>>,
-    private val bodyTypeInference: TypeInference,
-    holder: ConstraintsHolder
-) : AbstractTypeInference(context, holder) {
-    private val bodyEnv get() = bodyTypeInference.context.env
-
-    val typeVars = mutableListOf<String>()
-
-    private val parametersObs = parameters.observeList { ch ->
-        when (ch) {
-            is Added    -> {
-                val v = context.namer.freshName()
-                typeVars.add(ch.index, v)
-                bind(ch.added, Var(v))
-            }
-            is Removed  -> {
-                val v = typeVars[ch.index]
-                typeVars.removeAt(ch.index)
-                context.namer.release(v)
-                unbind(ch.removed)
-            }
-            is Replaced -> {
-                unbind(ch.removed)
-                bind(ch.added, Var(typeVars[ch.index]))
-            }
-        }
-        recomputeType()
-    }
-
-    private fun bind(name: CompileResult<String>, t: Var) {
-        name.ifOk { n ->
-            if (parameters.now.count { it == ok(n) } == 1) bodyEnv.bind(n, t)
-        }
-    }
-
-    private fun unbind(name: CompileResult<String>) {
-        name.ifOk { n ->
-            if (parameters.now.none { it == ok(n) }) bodyEnv.unbind(n)
-        }
-    }
+    private val body: TypeInference
+) : AbstractTypeInference(context) {
+    private val bodyEnv get() = body.context.env
+    val typeVars = mutableListOf<Type>()
+    private val parametersChange = unitEvent()
 
     init {
+        dependsOn(parameters.asSet())
+    }
+
+    override fun doReset() {
+        typeVars.clear()
+    }
+
+    override fun doRecompute() {
+        bodyEnv.clear()
         for (p in parameters.now) {
-            val v = context.namer.freshName()
+            val v = Var(freshName())
             typeVars.add(v)
-            p.ifOk { name ->
-                bodyEnv.bind(name, Var(v))
-            }
+            p.ifOk { name -> bodyEnv.bind(name, v) }
         }
     }
 
-    private var _type = reactiveVariable(childErr<Type>())
+    override fun children(): Collection<TypeInference> = listOf(body)
 
-    private val bodyTypeObs = bodyTypeInference.type.forEach { recomputeType() }
-
-    override fun dispose() {
-        super.dispose()
-        parametersObs.kill()
-        bodyTypeObs.kill()
-        for (n in typeVars) context.namer.release(n)
-        bodyTypeInference.dispose()
+    override val type = binding<CompileResult<Type>>(dependencies(body.type, parametersChange.stream)) {
+        body.type.now.map { t -> functionType(typeVars, t) }
     }
-
-    private fun recomputeType() {
-        _type.now = bodyTypeInference.type.now.map { t -> typeVars.foldRight(t) { v, acc -> Func(Var(v), acc) } }
-    }
-
-    override val type: ReactiveValue<CompileResult<Type>> = _type
 }

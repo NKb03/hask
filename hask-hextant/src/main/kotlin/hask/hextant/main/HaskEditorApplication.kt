@@ -7,7 +7,8 @@ package hask.hextant.main
 import hask.core.rt.eval
 import hask.hextant.context.HaskInternal
 import hask.hextant.editor.ExprExpander
-import hask.hextant.ti.unify.ConstraintsHolderFactory
+import hask.hextant.editor.inferences
+import hask.hextant.ti.AbstractTypeInference
 import hask.hextant.ti.env.TIContext
 import hextant.*
 import hextant.bundle.createBundle
@@ -22,15 +23,14 @@ import reaktive.value.now
 
 class HaskEditorApplication : HextantApplication() {
     override fun createContext(root: Context): Context = HextantPlatform.defaultContext(root).apply {
-        set(HaskInternal,
-            TIContext, TIContext.root())
+        set(HaskInternal, TIContext, TIContext.root())
     }
 
     override fun createView(context: Context): Parent {
         val ti = context[HaskInternal, TIContext]
         val unificator = ti.unificator
-        context[HaskInternal, ConstraintsHolderFactory] = ConstraintsHolderFactory.unifying(unificator)
         val editor = ExprExpander(context)
+        editor.inference.activate()
         val cl = CommandLine(context, ContextCommandSource(context))
         val cli = CommandLineControl(cl, createBundle())
         val editorView = context.createView(editor).apply {
@@ -46,6 +46,12 @@ class HaskEditorApplication : HextantApplication() {
                     println("Unifier:")
                     for (s in unificator.substitutions()) println("${s.key} = ${s.value}")
                     println("${ti.namer}")
+                    val tree = editor.inferences()
+                    val active = AbstractTypeInference.actives()
+                    println("In tree $tree")
+                    println("Active: $active")
+                    println("In tree but not active: ${tree - active}")
+                    println("Active but not in tree: ${active - tree}")
                 }
                 on("ESCAPE") {
                     cli.receiveFocus()

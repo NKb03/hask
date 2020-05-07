@@ -39,8 +39,7 @@ class IfEditor(
         context[HaskInternal, TIContext],
         condition.inference,
         ifTrue.inference,
-        ifFalse.inference,
-        context.createConstraintsHolder()
+        ifFalse.inference
     )
 
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {
