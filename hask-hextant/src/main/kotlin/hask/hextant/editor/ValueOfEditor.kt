@@ -16,17 +16,13 @@ import reaktive.set.toSet
 import reaktive.value.binding.map
 import reaktive.value.now
 
-class ValueOfEditor(context: Context) : TokenEditor<ValueOf, ValueOfEditorView>(context), ExprEditor<ValueOf> {
-    constructor(context: Context, text: String) : this(context) {
-        setText(text)
-    }
+class ValueOfEditor(context: Context, text: String) : TokenEditor<ValueOf, ValueOfEditorView>(context, text),
+                                                      ExprEditor<ValueOf> {
+    constructor(context: Context): this(context, "")
 
     override val freeVariables = result.map { it.orNull()?.name }.toSet()
 
-    override val inference = ReferenceTypeInference(
-        context[HaskInternal, TIContext],
-        result.mapResult { it.name }
-    )
+    override val inference = ReferenceTypeInference(context[HaskInternal, TIContext], result.mapResult { it.name })
 
     override fun compile(token: String): CompileResult<ValueOf> = token
         .takeIf { it.matches(IdentifierEditor.IDENTIFIER_REGEX) }

@@ -52,7 +52,7 @@ class SimpleUnificator : Unificator {
     private fun subst(t: Type) = t.apply(substitutions())
 
     override fun removeAll(cs: Collection<Constraint>) {
-        if (cs.isEmpty()) return
+        if (constraints.intersect(cs).isEmpty()) return
         for (c in constraints) c.display.clearErrors()
         constraints.removeAll(cs)
         subst.clear()

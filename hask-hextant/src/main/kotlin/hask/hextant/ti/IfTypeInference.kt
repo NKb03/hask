@@ -13,21 +13,24 @@ class IfTypeInference(
     private val condition: TypeInference,
     private val then: TypeInference,
     private val otherwise: TypeInference
-) : AbstractTypeInference(context) {
-    private var _type = reactiveVariable(childErr<Type>())
+) : NewAbstractTypeInference(context) {
+    private val result by typeVariable()
 
+    private var _type = reactiveVariable(childErr<Type>())
     override val type get() = _type
 
     init {
         dependsOn(condition.type, then.type, otherwise.type)
     }
 
+    override fun onActivate() {
+        _type.set(ok(Var(result)))
+    }
+
     override fun doRecompute() {
-        val result = Var(freshName())
-        _type.set(ok(result))
         condition.type.now.ifOk { t -> addConstraint(t, BoolT) }
-        then.type.now.ifOk { t -> addConstraint(t, result) }
-        otherwise.type.now.ifOk { t -> addConstraint(t, result) }
+        then.type.now.ifOk { t -> addConstraint(t, Var(result)) }
+        otherwise.type.now.ifOk { t -> addConstraint(t, Var(result)) }
     }
 
     override fun children(): Collection<TypeInference> = listOf(condition, then, otherwise)

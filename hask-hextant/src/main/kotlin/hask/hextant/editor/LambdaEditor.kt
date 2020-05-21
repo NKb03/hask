@@ -6,7 +6,6 @@ package hask.hextant.editor
 
 import hask.core.ast.Expr
 import hask.core.ast.Expr.Lambda
-import hask.core.type.Type.Var
 import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.eval.EvaluationEnv.Resolution.Parameter

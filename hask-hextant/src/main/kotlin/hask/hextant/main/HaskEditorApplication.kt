@@ -4,17 +4,16 @@
 
 package hask.hextant.main
 
+import bundles.createBundle
 import hask.core.rt.eval
 import hask.hextant.context.HaskInternal
 import hask.hextant.editor.ExprExpander
-import hask.hextant.editor.inferences
-import hask.hextant.ti.AbstractTypeInference
 import hask.hextant.ti.env.TIContext
 import hextant.*
-import hextant.bundle.createBundle
 import hextant.command.line.*
 import hextant.fx.registerShortcuts
 import hextant.main.HextantApplication
+import hextant.serial.makeRoot
 import javafx.scene.Parent
 import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType.INFORMATION
@@ -30,6 +29,7 @@ class HaskEditorApplication : HextantApplication() {
         val ti = context[HaskInternal, TIContext]
         val unificator = ti.unificator
         val editor = ExprExpander(context)
+        editor.makeRoot()
         editor.inference.activate()
         val cl = CommandLine(context, ContextCommandSource(context))
         val cli = CommandLineControl(cl, createBundle())
@@ -46,12 +46,6 @@ class HaskEditorApplication : HextantApplication() {
                     println("Unifier:")
                     for (s in unificator.substitutions()) println("${s.key} = ${s.value}")
                     println("${ti.namer}")
-                    val tree = editor.inferences()
-                    val active = AbstractTypeInference.actives()
-                    println("In tree $tree")
-                    println("Active: $active")
-                    println("In tree but not active: ${tree - active}")
-                    println("Active but not in tree: ${active - tree}")
                 }
                 on("ESCAPE") {
                     cli.receiveFocus()

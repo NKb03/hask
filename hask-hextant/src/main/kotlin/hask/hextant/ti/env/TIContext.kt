@@ -4,13 +4,12 @@
 
 package hask.hextant.ti.env
 
+import bundles.Property
 import hask.core.type.Type
 import hask.core.type.TypeScheme
 import hask.hextant.context.HaskInternal
 import hask.hextant.ti.unify.*
 import hextant.*
-import hextant.bundle.Property
-
 data class TIContext(
     val namer: ReleasableNamer,
     val unificator: Unificator,

@@ -1,16 +1,11 @@
+import hask.hextant.*
 import hask.hextant.context.HaskInternal
 import hask.hextant.editor.*
 import hask.hextant.editor.type.*
 import hask.hextant.ti.env.TIContext
-import hask.hextant.typeConstraintInspection
-import hask.hextant.typeOkInspection
 import hask.hextant.view.IdentifierEditorControl
 import hask.hextant.view.ValueOfEditorControl
-import hextant.base.CompoundEditorControl
-import hextant.base.view
 import hextant.command.Command.Type.SingleReceiver
-import hextant.command.command
-import hextant.command.parameter
 import hextant.completion.NoCompleter
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
@@ -19,9 +14,8 @@ import hextant.core.view.ListEditorControl.Orientation
 import hextant.core.view.ListEditorControl.Orientation.Horizontal
 import hextant.core.view.ListEditorControl.SeparatorCell
 import hextant.createView
+import hextant.fx.*
 import hextant.fx.ModifierValue.DOWN
-import hextant.fx.registerShortcuts
-import hextant.fx.shortcut
 import hextant.ifErr
 import hextant.plugin.dsl.PluginInitializer
 import javafx.scene.input.KeyCode.*
@@ -120,7 +114,7 @@ object HaskPlugin : PluginInitializer({
                     }
                 }
                 on(shortcut(E) { control(DOWN) }) {
-                    e.evaluateOneStep()
+                    e.evaluateOnce()
                 }
                 //                on(shortcut(E) { control(DOWN); shift(DOWN) }) {
                 //                    e.evaluateFully()
@@ -213,23 +207,30 @@ object HaskPlugin : PluginInitializer({
             }
         }
     }
+    command(eval)
     registerCommand<ExprExpander, Unit> {
-        name = "eval"
-        shortName = "eval"
-        description = "Applies one step of evaluation"
+        name = "unevaluate"
+        shortName = "uneval"
+        description = "Undoes a previous step of computation"
         type = SingleReceiver
-        applicableIf { it.editor.now?.canEvalOneStep() ?: false }
-        executing { exp, _ -> exp.evaluateOneStep() }
+        executing { e, _ -> e.unevaluate() }
+    }
+    registerCommand<ExprExpander, Unit> {
+        name = "unevaluate fully"
+        shortName = "uneval!"
+        description = "Undoes all previous steps of computation"
+        type = SingleReceiver
+        executing { e, _ -> e.unevaluateFully() }
     }
     registerCommand<ExprEditor<*>, String> {
         name = "free variables"
         shortName = "fvs"
         description = "Prints all free variables of the expression"
         type = SingleReceiver
-        executing { e, _ -> e.freeVariables.now.joinToString() }
+        executing { e, _ -> e.freeVariables.now.toString() }
     }
     inspection(::typeOkInspection)
     inspection(::typeConstraintInspection)
-    //    inspection(::betaConversion)
+    inspection(::betaConversion)
     stylesheet("hextant/hask/style.css")
 })

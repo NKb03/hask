@@ -67,12 +67,12 @@ class ApplyEditor private constructor(
             args.size < parameters.size -> {
                 val e = LambdaEditor(context)
                 e.parameters.setEditors(applied.parameters.editors.now.drop(args.size))
-                e.body.paste(b)
+                e.body.paste(b.snapshot())
                 e
             }
             args.size > parameters.size -> {
                 val e = ApplyEditor(context)
-                e.applied.paste(b)
+                e.applied.paste(b.snapshot())
                 e.arguments.setEditors(args.drop(parameters.size))
                 e
             }

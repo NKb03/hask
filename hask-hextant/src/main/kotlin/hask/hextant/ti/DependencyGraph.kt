@@ -6,8 +6,8 @@ package hask.hextant.ti
 
 import hask.core.condense
 import hask.core.topologicalSort
-import hask.hextant.ti.impl.Cache
 import hextant.*
+import kollektion.Cache
 import reaktive.event.unitEvent
 import reaktive.list.ReactiveList
 import reaktive.list.observeEach

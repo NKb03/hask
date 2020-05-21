@@ -8,7 +8,6 @@ import com.natpryce.hamkrest.*
 import com.natpryce.hamkrest.should.shouldMatch
 import hask.core.type.Type.INT
 import hask.hextant.ti.env.TIContext
-import hask.hextant.ti.unify.ConstraintsHolderFactory
 import hextant.ok
 import org.junit.jupiter.api.Test
 import reaktive.list.reactiveList
@@ -24,11 +23,12 @@ class TypeInferenceTests {
         val ref = reactiveVariable(ok("x"))
         val lambdaContext = context.child()
         val body = ReferenceTypeInference(lambdaContext.child(), ref)
+        body.activate()
         val lambda = LambdaTypeInference(lambdaContext, parameters, body)
         val application = ApplyTypeInference(
-            context,
+            lambdaContext.child(),
             lambda,
-            reactiveList(IntLiteralTypeInference(context.child()))
+            reactiveList(IntLiteralTypeInference(lambdaContext.child()))
         )
         application.assertType(INT)
     }
@@ -50,10 +50,10 @@ class TypeInferenceTests {
         val bodyContext = context.child()
         val body = ApplyTypeInference(
             bodyContext,
-            ReferenceTypeInference(bodyContext.child(), ref),
-            reactiveList(ReferenceTypeInference(bodyContext.child(), ref))
+            ReferenceTypeInference(bodyContext.child(), ref).also { it.activate() },
+            reactiveList(ReferenceTypeInference(bodyContext.child(), ref).also { it.activate() })
         )
-        val lambda = LambdaTypeInference(context, parameters, body)
+        val lambda = LambdaTypeInference(context.child(), parameters, body)
     }
 
     //let id = ;root
@@ -72,21 +72,27 @@ class TypeInferenceTests {
         val letValue2Ctx = letBody1Ctx.child()
         val letBody2Ctx = letBody1Ctx.child()
         val lambdaBody = ReferenceTypeInference(lambdaBodyCtx, reactiveValue(ok("x")))
+        lambdaBody.activate()
         val letValue1 = LambdaTypeInference(letValue1Ctx, reactiveList(ok("x")), lambdaBody)
+        letValue1.activate()
         val letValue2 = ReferenceTypeInference(letValue2Ctx, reactiveValue(ok("x")))
+        letValue2.activate()
         val letBody2 = IntLiteralTypeInference(letBody2Ctx)
+        letBody2.activate()
         val letBody1 = LetTypeInference(
             letBody1Ctx,
             { listOf(Pair(ok("x"), letValue2)) },
             DependencyGraph(reactiveList(Pair(reactiveValue(ok("x")), emptyReactiveSet()))),
             letBody2
         )
+        letBody1.activate()
         val root = LetTypeInference(
             rootCtx,
             { listOf(Pair(ok("id"), letValue1)) },
             DependencyGraph(reactiveList(Pair(reactiveValue(ok("id")), emptyReactiveSet()))),
             letBody1
         )
+        root.activate()
         root.errors.now shouldMatch isEmpty
         root.assertType(INT)
     }

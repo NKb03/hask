@@ -11,15 +11,16 @@ import hask.hextant.ti.env.TIContext
 import hextant.*
 import reaktive.list.ReactiveList
 import reaktive.list.binding.values
-import reaktive.value.*
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 class ApplyTypeInference(
     context: TIContext,
     private val function: TypeInference,
     private val arguments: ReactiveList<TypeInference>
-) : AbstractTypeInference(context) {
+) : NewAbstractTypeInference(context) {
     private val argumentTypes = arguments.map { it.type }.values()
-    private val returnType = reactiveVariable(childErr<Type>())
+    private val ret by typeVariable()
 
     init {
         dependsOn(function.type, argumentTypes)
@@ -28,12 +29,15 @@ class ApplyTypeInference(
     override fun children(): Collection<TypeInference> = arguments.now + function
 
     override fun doRecompute() {
-        val ret = Var(freshName())
-        returnType.set(ok(ret))
         val f = function.type.now.ifErr { return }
         val args = argumentTypes.now.map { t -> t.ifErr { Var(freshName()) } }
-        addConstraint(f, functionType(args, ret))
+        addConstraint(f, functionType(args, Var(ret)))
     }
 
-    override val type get() = returnType
+    override fun onActivate() {
+        _type.set(ok(Var(ret)))
+    }
+
+    private var _type = reactiveVariable(childErr<Type>())
+    override val type get() = _type
 }

@@ -4,9 +4,8 @@
 
 package hask.hextant.ti.unify
 
+import bundles.Property
 import hask.hextant.context.HaskInternal
-import hextant.bundle.Property
-
 interface ConstraintsHolderFactory {
     fun createHolder(): ConstraintsHolder
 

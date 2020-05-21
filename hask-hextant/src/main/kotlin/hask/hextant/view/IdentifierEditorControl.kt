@@ -4,8 +4,8 @@
 
 package hask.hextant.view
 
+import bundles.Bundle
 import hask.hextant.editor.IdentifierEditor
-import hextant.bundle.Bundle
 import hextant.core.view.AbstractTokenEditorControl
 import hextant.fx.*
 import javafx.css.PseudoClass

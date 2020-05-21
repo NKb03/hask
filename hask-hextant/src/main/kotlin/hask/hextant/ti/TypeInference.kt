@@ -12,7 +12,7 @@ import reaktive.set.ReactiveSet
 import reaktive.value.ReactiveValue
 
 interface TypeInference : ErrorDisplay {
-    val active: Boolean
+    val isActive: Boolean
 
     val context: TIContext
 
@@ -22,5 +22,5 @@ interface TypeInference : ErrorDisplay {
 
     fun activate()
 
-    fun deactivate()
+    fun dispose()
 }

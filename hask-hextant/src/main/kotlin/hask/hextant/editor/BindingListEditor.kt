@@ -16,14 +16,17 @@ class BindingListEditor(context: Context) : ListEditor<Binding, BindingEditor>(c
 
     override fun editorAdded(editor: BindingEditor, index: Int) {
         val p = parent
-        if (p is ExprEditor && p.inference.active) {
+        if (p is ExprEditor && p.inference.isActive) {
             println("activating ${editor.value.result.now}")
             editor.value.inference.activate()
         }
     }
 
     override fun editorRemoved(editor: BindingEditor, index: Int) {
-        println("deactivating ${editor.value.result.now}")
-        editor.value.inference.deactivate()
+        val p = parent
+        if (p is ExprEditor && p.inference.isActive) {
+            println("deactivating ${editor.value.result.now}")
+            editor.value.inference.dispose()
+        }
     }
 }

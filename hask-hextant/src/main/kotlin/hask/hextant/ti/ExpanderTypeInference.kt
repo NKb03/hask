@@ -13,12 +13,13 @@ import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 
 class ExpanderTypeInference(
-    private val inference: ReactiveValue<TypeInference?>,
-    context: TIContext
-) : AbstractTypeInference(context) {
+    context: TIContext,
+    private val inference: ReactiveValue<TypeInference?>
+) : NewAbstractTypeInference(context) {
     override fun children(): Collection<TypeInference> = inference.now?.let { listOf(it) } ?: emptyList()
 
     override val type = inference.flatMap { inf ->
         inf?.type?.map { t -> t.or(childErr()) } ?: reactiveValue(childErr<Type>())
     }
+
 }

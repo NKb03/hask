@@ -4,9 +4,9 @@
 
 package hask.hextant.view
 
+import bundles.Bundle
 import hask.hextant.editor.ReferenceCompleter
 import hask.hextant.editor.ValueOfEditor
-import hextant.bundle.Bundle
 import hextant.core.view.AbstractTokenEditorControl
 import javafx.css.PseudoClass
 

@@ -18,12 +18,12 @@ class LetTypeInference(
     private val bindings: () -> List<Pair<CompileResult<String>, TypeInference>>,
     private val dependencyGraph: DependencyGraph,
     private val body: TypeInference
-) : AbstractTypeInference(context) {
+) : NewAbstractTypeInference(context) {
     init {
         dependsOn(dependencyGraph.invalidated)
     }
 
-    override fun doReset() {
+    override fun onReset() {
         for (b in bindings()) {
             val e = env(b)
             e.clear()
@@ -56,11 +56,11 @@ class LetTypeInference(
                 val e = env(vertices[i])
                 for ((name, type) in env) {
                     val o = type.forEach { t -> e.bind(name, t) }
-                    addObserver(o, killOnReset = true)
+                    addObserver(o, killOnRecompute = true)
                 }
                 for (j in comp) {
                     val name = vertices[j].first.orNull() ?: continue
-                    e.bind(name, ok(TypeScheme(emptyList(), typeVars[j])))
+                    e.bind(name, typeVars[j])
                 }
             }
             for (i in comp) {
@@ -90,7 +90,7 @@ class LetTypeInference(
                     val type = typeVars[u]
                     for (v in ts[j]) {
                         val e = env(vertices[v])
-                        e.bind(name, ok(TypeScheme(emptyList(), type)))
+                        e.bind(name, type)
                     }
                 }
             }
@@ -101,7 +101,7 @@ class LetTypeInference(
         for ((name, type) in env) {
             val e = body.context.env
             val o = type.forEach { t -> e.bind(name, t) }
-            addObserver(o, killOnReset = true)
+            addObserver(o, killOnRecompute = true)
         }
     }
 

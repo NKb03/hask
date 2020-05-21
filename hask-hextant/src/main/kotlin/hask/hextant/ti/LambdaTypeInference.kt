@@ -20,7 +20,7 @@ class LambdaTypeInference(
     context: TIContext,
     private val parameters: ReactiveList<CompileResult<String>>,
     private val body: TypeInference
-) : AbstractTypeInference(context) {
+) : NewAbstractTypeInference(context) {
     private val bodyEnv get() = body.context.env
     val typeVars = mutableListOf<Type>()
     private val parametersChange = unitEvent()
@@ -29,12 +29,12 @@ class LambdaTypeInference(
         dependsOn(parameters.asSet())
     }
 
-    override fun doReset() {
+    override fun onReset() {
+        bodyEnv.clear()
         typeVars.clear()
     }
 
     override fun doRecompute() {
-        bodyEnv.clear()
         for (p in parameters.now) {
             val v = Var(freshName())
             typeVars.add(v)

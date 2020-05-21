@@ -7,8 +7,8 @@ package hask.hextant.ti.env
 import hask.core.type.*
 import hask.core.type.Type.*
 import hask.hextant.ti.Builtins.BoolT
-import hask.hextant.ti.impl.Counter
 import hextant.*
+import kollektion.Counter
 import reaktive.asValue
 import reaktive.set.*
 import reaktive.value.*

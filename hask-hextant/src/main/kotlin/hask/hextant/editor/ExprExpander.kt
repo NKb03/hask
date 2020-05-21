@@ -5,6 +5,8 @@
 package hask.hextant.editor
 
 import hask.core.ast.Expr
+import hask.core.rt.StackFrame
+import hask.core.rt.force
 import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.ti.ExpanderTypeInference
@@ -12,13 +14,14 @@ import hask.hextant.ti.env.TIContext
 import hextant.Context
 import hextant.command.Command.Type.SingleReceiver
 import hextant.command.meta.ProvideCommand
-import hextant.copy
 import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.ExpanderConfig
+import hextant.ifErr
 import reaktive.set.binding.flattenToSet
 import reaktive.set.emptyReactiveSet
 import reaktive.value.binding.map
 import reaktive.value.now
+import java.util.*
 
 class ExprExpander(context: Context) :
     ConfiguredExpander<Expr, ExprEditor<Expr>>(config, context), ExprEditor<Expr> {
@@ -28,8 +31,10 @@ class ExprExpander(context: Context) :
 
     override val freeVariables = editor.map { it?.freeVariables ?: emptyReactiveSet() }.flattenToSet()
 
+    private val evalStack: Deque<ExprEditor<Expr>> = LinkedList()
+
     override fun onExpansion(editor: ExprEditor<Expr>) {
-        if (this.inference.active) {
+        if (this.inference.isActive) {
             println("expanded, activating ${editor.result.now}")
             editor.inference.activate()
         }
@@ -37,13 +42,10 @@ class ExprExpander(context: Context) :
 
     override fun onReset(editor: ExprEditor<Expr>) {
         println("reset, deactivating ${editor.result.now}")
-        editor.inference.deactivate()
+        editor.inference.dispose()
     }
 
-    override val inference = ExpanderTypeInference(
-        editor.map { it?.inference },
-        context[HaskInternal, TIContext]
-    )
+    override val inference = ExpanderTypeInference(context[HaskInternal, TIContext], editor.map { it?.inference })
 
     @ProvideCommand(shortName = "apply", type = SingleReceiver)
     fun wrapInApply() {
@@ -67,19 +69,31 @@ class ExprExpander(context: Context) :
         setEditor(let)
     }
 
-    //@ProvideCommand(shortName = "eval!")
+    fun evaluateOnce() {
+        val e = editor.now ?: return
+        evalStack.push(e)
+        evaluateOneStep()
+    }
+
+    @ProvideCommand(shortName = "eval!", type = SingleReceiver)
     fun evaluateFully() {
-        TODO("not implemented")
+        val e = result.now.ifErr { return }
+        val f = StackFrame.root()
+        val r = e.force(f)
+        val old = editor.now!!
+        evalStack.push(old)
+        setEditor(r.toExpr().constructEditor(context))
     }
 
-    //@ProvideCommand(shortName = "uneval")
     fun unevaluate() {
-        TODO("not implemented")
+        val e = evalStack.pop()
+        setEditor(e)
     }
 
-    //@ProvideCommand(shortName = "uneval!")
     fun unevaluateFully() {
-        TODO("not implemented")
+        val e = evalStack.peekLast()
+        evalStack.clear()
+        setEditor(e)
     }
 
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {
