@@ -13,7 +13,7 @@ class IfTypeInference(
     private val condition: TypeInference,
     private val then: TypeInference,
     private val otherwise: TypeInference
-) : NewAbstractTypeInference(context) {
+) : AbstractTypeInference(context) {
     private val result by typeVariable()
 
     private var _type = reactiveVariable(childErr<Type>())

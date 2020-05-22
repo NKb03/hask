@@ -18,7 +18,7 @@ class LetTypeInference(
     private val bindings: () -> List<Pair<CompileResult<String>, TypeInference>>,
     private val dependencyGraph: DependencyGraph,
     private val body: TypeInference
-) : NewAbstractTypeInference(context) {
+) : AbstractTypeInference(context) {
     init {
         dependsOn(dependencyGraph.invalidated)
     }
@@ -69,8 +69,8 @@ class LetTypeInference(
                 val defTypeVar = typeVars[i]
                 bind(inf.type, defTypeVar)
                 env[n] = inf.type.flatMap { t ->
-                    if (t is Ok) context.unificator.substitute(t.value)
-                        .flatMap { context.env.generalize(it) }
+                    if (t is Ok) inf.context.unificator.substitute(t.value)
+                        .flatMap { inf.context.env.generalize(it) }
                         .map { ok(it) }
                     else reactiveValue(t.castError<Type, TypeScheme>())
                 }

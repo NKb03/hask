@@ -17,7 +17,7 @@ import reaktive.set.*
 
 class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEditor<Lambda> {
     val parameters by child(IdentifierListEditor(context))
-    val body by child(ExprExpander(context.withChildTIContext()))
+    val body by child(ExprExpander(context.withTIContext { it.copy(env = it.env.child()) }))
 
     init {
         parameters.ensureNotEmpty()

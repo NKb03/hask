@@ -13,10 +13,20 @@ import reaktive.value.binding.binding
 class SimpleUnificator : Unificator {
     private val constraints = mutableSetOf<Constraint>()
     private val subst = mutableMapOf<String, ReactiveVariable<Type>>()
+    private var locked = false
+
+    private fun executeSafely(action: () -> Unit) {
+        check(!locked) { "Locked" }
+        locked = true
+        action()
+        locked = false
+    }
 
     override fun add(constraint: Constraint) {
-        constraints.add(constraint)
-        unify(constraint.a, constraint.b, constraint)
+        executeSafely {
+            constraints.add(constraint)
+            unify(constraint.a, constraint.b, constraint)
+        }
     }
 
     private fun unify(a: Type, b: Type, c: Constraint) {
@@ -43,8 +53,13 @@ class SimpleUnificator : Unificator {
     }
 
     private fun bind(name: String, type: Type) {
+        println("Bind $name = $type")
         subst(name).set(type)
-        for (t in subst.values) t.set(t.now.subst(name, type))
+        for (t in subst.values) {
+            val s = t.now.subst(name, type)
+            println("Substituting $t = $s")
+            t.set(s)
+        }
     }
 
     private fun subst(name: String) = subst.getOrPut(name) { reactiveVariable(Var(name)) }
@@ -52,11 +67,22 @@ class SimpleUnificator : Unificator {
     private fun subst(t: Type) = t.apply(substitutions())
 
     override fun removeAll(cs: Collection<Constraint>) {
-        if (constraints.intersect(cs).isEmpty()) return
-        for (c in constraints) c.display.clearErrors()
-        constraints.removeAll(cs)
-        subst.clear()
-        for (c in constraints) unify(c.a, c.b, c)
+        executeSafely {
+            if (constraints.intersect(cs).isEmpty()) {
+                println("empty")
+                return@executeSafely
+            }
+            for (c in constraints) c.display.clearErrors()
+            constraints.removeAll(cs)
+            subst.entries.forEach { (name, t) ->
+                println("Resetting $name = $name")
+                t.set(Var(name))
+            }
+            for (c in constraints) {
+                println("Unify $c")
+                unify(c.a, c.b, c)
+            }
+        }
     }
 
     override fun remove(constraint: Constraint) {

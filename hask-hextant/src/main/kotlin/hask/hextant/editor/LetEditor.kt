@@ -19,7 +19,7 @@ import reaktive.value.now
 
 class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let> {
     val bindings by child(BindingListEditor(context))
-    val body by child(ExprExpander(context.withChildTIContext()))
+    val body by child(ExprExpander(context.withTIContext { it.copy(env = it.env.child()) }))
 
     init {
         bindings.ensureNotEmpty()

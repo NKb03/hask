@@ -18,7 +18,7 @@ class ReleasableNamer: Namer {
     override fun freshName(): String {
         released.pollFirst()?.let {
             used.add(it)
-            println("using $it")
+            //println("using $it")
             return@freshName it
         }
         val str = "$char$counter"
@@ -27,7 +27,7 @@ class ReleasableNamer: Namer {
             counter++
         } else char++
         used.add(str)
-        println("using $str")
+        //println("using $str")
         return str
     }
 
@@ -40,7 +40,7 @@ class ReleasableNamer: Namer {
     }
 
     fun release(name: String) {
-        println("Releasing $name")
+        //println("Releasing $name")
         if (!used.remove(name)) System.err.println("Never used $name")
         if (!released.add(name)) System.err.println("Already released $name")
     }

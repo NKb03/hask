@@ -18,7 +18,7 @@ class ApplyTypeInference(
     context: TIContext,
     private val function: TypeInference,
     private val arguments: ReactiveList<TypeInference>
-) : NewAbstractTypeInference(context) {
+) : AbstractTypeInference(context) {
     private val argumentTypes = arguments.map { it.type }.values()
     private val ret by typeVariable()
 

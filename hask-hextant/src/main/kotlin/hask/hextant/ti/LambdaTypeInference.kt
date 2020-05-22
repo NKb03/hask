@@ -20,7 +20,7 @@ class LambdaTypeInference(
     context: TIContext,
     private val parameters: ReactiveList<CompileResult<String>>,
     private val body: TypeInference
-) : NewAbstractTypeInference(context) {
+) : AbstractTypeInference(context) {
     private val bodyEnv get() = body.context.env
     val typeVars = mutableListOf<Type>()
     private val parametersChange = unitEvent()

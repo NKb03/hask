@@ -15,11 +15,10 @@ import reaktive.value.binding.map
 class ExpanderTypeInference(
     context: TIContext,
     private val inference: ReactiveValue<TypeInference?>
-) : NewAbstractTypeInference(context) {
+) : AbstractTypeInference(context) {
     override fun children(): Collection<TypeInference> = inference.now?.let { listOf(it) } ?: emptyList()
 
     override val type = inference.flatMap { inf ->
         inf?.type?.map { t -> t.or(childErr()) } ?: reactiveValue(childErr<Type>())
     }
-
 }

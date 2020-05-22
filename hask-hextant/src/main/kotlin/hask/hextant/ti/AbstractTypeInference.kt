@@ -16,7 +16,7 @@ import reaktive.value.*
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
-abstract class NewAbstractTypeInference(final override val context: TIContext) : TypeInference {
+abstract class AbstractTypeInference(final override val context: TIContext) : TypeInference {
     private var activated = false
     private var disposed = false
     final override val isActive: Boolean get() = activated && !disposed
@@ -41,6 +41,7 @@ abstract class NewAbstractTypeInference(final override val context: TIContext) :
     protected open fun children(): Collection<TypeInference> = emptyList()
 
     protected fun addConstraint(a: Type, b: Type) {
+        ensureActive()
         val c = Constraint(a, b, this)
         constraints.add(c)
         context.unificator.add(c)
@@ -49,7 +50,7 @@ abstract class NewAbstractTypeInference(final override val context: TIContext) :
     protected fun removeConstraint(a: Type, b: Type) {
         ensureActive()
         val c = Constraint(a, b, this)
-        if (constraints.remove(c)) context.unificator.add(c)
+        if (constraints.remove(c)) context.unificator.remove(c)
     }
 
     protected fun clearConstraints() {
@@ -58,7 +59,7 @@ abstract class NewAbstractTypeInference(final override val context: TIContext) :
         constraints.clear()
     }
 
-    protected fun typeVariable(): ReadOnlyProperty<NewAbstractTypeInference, String> {
+    protected fun typeVariable(): ReadOnlyProperty<AbstractTypeInference, String> {
         check(!disposed) { "Already disposed" }
         val d = FreshName()
         delegates.add(d)
@@ -67,25 +68,30 @@ abstract class NewAbstractTypeInference(final override val context: TIContext) :
     }
 
     protected fun freshName(): String {
+        ensureActive()
         val n = context.namer.freshName()
         useName(n)
         return n
     }
 
     protected fun useName(name: String) {
+        ensureActive()
         usedNames.add(name)
     }
 
     protected fun useNames(names: Collection<String>) {
+        ensureActive()
         usedNames.addAll(names)
     }
 
     protected fun releaseName(name: String) {
+        ensureActive()
         check(usedNames.remove(name)) { "$name was not used" }
         context.namer.release(name)
     }
 
     protected fun releaseAllNames() {
+        ensureActive()
         for (n in usedNames) context.namer.release(n)
         usedNames.clear()
     }
@@ -167,10 +173,10 @@ abstract class NewAbstractTypeInference(final override val context: TIContext) :
         _errors.now.clear()
     }
 
-    private class FreshName : ReadOnlyProperty<NewAbstractTypeInference, String> {
+    private class FreshName : ReadOnlyProperty<AbstractTypeInference, String> {
         var name: String? = null
 
-        override fun getValue(thisRef: NewAbstractTypeInference, property: KProperty<*>): String =
+        override fun getValue(thisRef: AbstractTypeInference, property: KProperty<*>): String =
             name ?: error("Not activated")
     }
 }

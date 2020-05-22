@@ -11,12 +11,12 @@ import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.ti.ExpanderTypeInference
 import hask.hextant.ti.env.TIContext
-import hextant.Context
+import hextant.*
 import hextant.command.Command.Type.SingleReceiver
 import hextant.command.meta.ProvideCommand
 import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.ExpanderConfig
-import hextant.ifErr
+import hextant.undo.compoundEdit
 import reaktive.set.binding.flattenToSet
 import reaktive.set.emptyReactiveSet
 import reaktive.value.binding.map
@@ -35,38 +35,45 @@ class ExprExpander(context: Context) :
 
     override fun onExpansion(editor: ExprEditor<Expr>) {
         if (this.inference.isActive) {
-            println("expanded, activating ${editor.result.now}")
+            //println("expanded, activating ${editor.result.now}")
             editor.inference.activate()
         }
     }
 
     override fun onReset(editor: ExprEditor<Expr>) {
-        println("reset, deactivating ${editor.result.now}")
-        editor.inference.dispose()
+        if (this.inference.isActive) {
+            //println("reset, deactivating ${editor.result.now}")
+            editor.inference.dispose()
+        }
     }
 
     override val inference = ExpanderTypeInference(context[HaskInternal, TIContext], editor.map { it?.inference })
 
     @ProvideCommand(shortName = "apply", type = SingleReceiver)
     fun wrapInApply() {
-        val editor = editor.now ?: return
+        val editor = editor.now?.snapshot() ?: return
         val apply = ApplyEditor(context)
-        apply.applied.setEditor(editor)
-        setEditor(apply)
+        context.compoundEdit("wrap in application") {
+            setEditor(apply)
+            apply.applied.paste(editor)
+        }
+        val arg1 = apply.arguments.editors.now.first()
         views {
-            val arg1 = apply.arguments.editors.now.first()
             val view = group.getViewOf(arg1)
             view.focus()
         }
+
     }
 
     @ProvideCommand(shortName = "let", type = SingleReceiver)
     fun wrapInLet() {
-        val editor = editor.now ?: return
+        val editor = editor.now?.snapshot() ?: return
         val let = LetEditor(context)
-        val b = let.bindings.addLast()!!
-        b.value.setEditor(editor)
-        setEditor(let)
+        context.compoundEdit("wrap in let") {
+            setEditor(let)
+            val b = let.bindings.addLast()!!
+            b.value.paste(editor)
+        }
     }
 
     fun evaluateOnce() {
@@ -109,9 +116,9 @@ class ExprExpander(context: Context) :
         val new = e.evaluateOneStep()
         if (new is ExprExpander) {
             val c = new.editor.now
-            if (c != null) setEditor(c)
+            if (c != null) paste(c.snapshot())
             else reset()
-        } else if (new !== e) setEditor(new)
+        } else if (new !== e) paste(new.snapshot())
         return this
     }
 

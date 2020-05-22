@@ -11,15 +11,15 @@ import hextant.Context
 import hextant.Editor
 import reaktive.value.now
 
-fun Context.withChildTIContext(): Context {
+fun Context.withTIContext(create: (TIContext) -> TIContext): Context {
     return Context.newInstance(this) {
-        set(HaskInternal, TIContext, get(HaskInternal, TIContext).child())
+        set(HaskInternal, TIContext, create(get(HaskInternal, TIContext)))
     }
 }
 
 fun Editor<*>.inferences(): Set<TypeInference> = when (this) {
     is ExprExpander      -> (editor.now?.inferences() ?: emptySet<TypeInference>()) + inference
-    is ExprListEditor -> editors.now.flatMapTo(mutableSetOf()) { it.inferences() }
+    is ExprListEditor    -> editors.now.flatMapTo(mutableSetOf()) { it.inferences() }
     is BindingListEditor -> editors.now.flatMapTo(mutableSetOf()) { it.value.inferences() }
     is ExprEditor        -> children.now.flatMapTo(mutableSetOf<TypeInference>()) { it.inferences() } + inference
     else                 -> emptySet()
