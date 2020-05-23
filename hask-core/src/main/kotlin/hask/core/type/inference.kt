@@ -12,7 +12,7 @@ import hask.core.topologicalSort
 import hask.core.type.Type.*
 import java.util.*
 
-private fun Expr.freeVariables(env: Set<String>, collect: MutableSet<String> = mutableSetOf()): Set<String> {
+fun Expr.freeVariables(env: Set<String>, collect: MutableSet<String> = mutableSetOf()): Set<String> {
     when (this) {
         is IntLiteral      -> {
         }
@@ -60,14 +60,7 @@ fun Expr.inferType(
         ret
     }
     is Let             -> {
-        val vertices = bindings.withIndex().associate { (idx, b) -> b.name to idx }
-        val graph = List(bindings.size) { mutableListOf<Int>() }
-        for ((i, b) in bindings.withIndex()) {
-            for (v in b.value.freeVariables(env.keys)) {
-                val j = vertices[v] ?: continue
-                graph[j].add(i)
-            }
-        }
+        val graph = makeGraph(env.keys)
         val env2 = env.toMutableMap()
         for (comp in graph.condense().topologicalSort()) {
             val typeVars = comp.associate { i -> bindings[i].name to Var(namer.freshName()) }
@@ -133,6 +126,18 @@ fun Expr.inferType(
         }
         returnType
     }
+}
+
+fun Let.makeGraph(boundVars: Set<String>): List<MutableList<Int>> {
+    val vertices = bindings.withIndex().associate { (idx, b) -> b.name to idx }
+    val graph = List(bindings.size) { mutableListOf<Int>() }
+    for ((i, b) in bindings.withIndex()) {
+        for (v in b.value.freeVariables(boundVars)) {
+            val j = vertices[v] ?: continue
+            graph[j].add(i)
+        }
+    }
+    return graph
 }
 
 fun functionType(parameters: List<Type>, returnType: Type) =

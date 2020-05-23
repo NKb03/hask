@@ -62,7 +62,7 @@ fun main() {
     tryFac()
     val e = let("a" be "b".v + 2.l, "b" be 1.l, body = lambda("x", body = "x".v * ("a".v - "b".v)))
     val f = e.force(StackFrame.root())
-    println(f.toExpr())
+    println(f.toExpr(emptySet()))
 }
 
 private fun tryParse() {

@@ -16,9 +16,7 @@ fun Expr.force(frame: StackFrame = StackFrame.root()): NormalForm = when (this) 
     is IntLiteral      -> IntValue(num)
     is ValueOf         -> frame.getVar(name).force()
     is Lambda          -> Function(parameters, body, frame)
-    is Apply           -> {
-        function.force(frame).apply(arguments.map { it.eval(frame) })
-    }
+    is Apply           -> function.apply(arguments, frame)
     is Let             -> {
         val newFrame = frame.child()
         for ((name, value) in bindings) {
@@ -49,21 +47,27 @@ fun Expr.force(frame: StackFrame = StackFrame.root()): NormalForm = when (this) 
         }
         error("No match")
     }
-    is ApplyBuiltin    -> {
-        val values = arguments.map { it.force(frame) }
-        function(values)
+    is ApplyBuiltin    -> function(arguments.map { it.force(frame) })
+}
+
+private fun Expr.apply(arguments: List<Expr>, frame: StackFrame): NormalForm {
+    return when (val f = force(frame)) {
+        is Irreducible -> Irreducible(Apply(this, arguments))
+        is Function    -> f.apply(arguments, frame)
+        else           -> error("Cannot use $f as function")
     }
 }
 
-fun NormalForm.apply(arguments: List<Thunk>): NormalForm {
-    check(this is Function) { "Cannot use $this as function" }
-    val newFrame = this.frame.withBindings(parameters.zip(arguments))
+fun Function.apply(arguments: List<Expr>, frame: StackFrame): NormalForm {
+    val newFrame = this.frame.child()
+    for ((p, a) in parameters.zip(arguments)) newFrame.put(p, a.eval(frame))
     return when {
         parameters.size > arguments.size -> Function(parameters.drop(arguments.size), body, newFrame)
-        parameters.size < arguments.size -> body.force(newFrame).apply(arguments.drop(parameters.size))
+        parameters.size < arguments.size -> body.force(newFrame).toExpr(frame.boundVariables()).apply(arguments.drop(parameters.size), frame)
         else                             -> body.force(newFrame)
     }
 }
+
 
 fun Expr.eval(frame: StackFrame = StackFrame.root()): Thunk = when (this) {
     is IntLiteral      -> Thunk.strict(IntValue(num))

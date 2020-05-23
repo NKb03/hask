@@ -7,6 +7,7 @@ package hask.core.rt
 import hask.core.ast.ADTConstructor
 import hask.core.ast.Expr
 import hask.core.ast.Expr.*
+import hask.core.type.freeVariables
 
 sealed class NormalForm {
     data class IntValue(val value: Int) : NormalForm() {
@@ -29,6 +30,10 @@ sealed class NormalForm {
         }
     }
 
+    data class Irreducible(val expr: Expr) : NormalForm() {
+        override fun toString(): String = "$expr"
+    }
+
     fun eq(other: NormalForm): Boolean = when {
         this is IntValue && other is IntValue -> this.value == other.value
         this is ADTValue && other is ADTValue ->
@@ -37,9 +42,15 @@ sealed class NormalForm {
         else                                  -> false
     }
 
-    fun toExpr(): Expr = when (this) {
-        is IntValue -> IntLiteral(value)
-        is ADTValue -> ConstructorCall(constructor, fields.map { it.force().toExpr() })
-        is Function -> Lambda(parameters, body.substitute(frame.bindings().mapValues { (_, v) -> v.toExpr() }))
+    fun toExpr(env: Set<String>): Expr = when (this) {
+        is IntValue    -> IntLiteral(value)
+        is ADTValue    -> ConstructorCall(constructor, fields.map { it.force().toExpr(env) })
+        is Function    -> {
+            val bound = env + parameters
+            val fvs = body.freeVariables(bound)
+            val subst = fvs.associateWith { frame.getVar(it).force().toExpr(bound) }
+            Lambda(parameters, body.substitute(subst))
+        }
+        is Irreducible -> expr
     }
 }
