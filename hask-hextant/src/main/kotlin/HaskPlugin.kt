@@ -5,7 +5,9 @@ import hask.hextant.editor.type.*
 import hask.hextant.ti.env.TIContext
 import hask.hextant.view.IdentifierEditorControl
 import hask.hextant.view.ValueOfEditorControl
+import hextant.*
 import hextant.command.Command.Type.SingleReceiver
+import hextant.command.parameter
 import hextant.completion.NoCompleter
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
@@ -13,15 +15,14 @@ import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation
 import hextant.core.view.ListEditorControl.Orientation.Horizontal
 import hextant.core.view.ListEditorControl.SeparatorCell
-import hextant.createView
 import hextant.fx.*
 import hextant.fx.ModifierValue.DOWN
-import hextant.ifErr
 import hextant.plugin.dsl.PluginInitializer
 import javafx.scene.input.KeyCode.*
 import javafx.scene.text.Text
 import org.controlsfx.control.PopOver
 import reaktive.value.now
+import java.nio.file.Paths
 
 object HaskPlugin : PluginInitializer({
     name = "Hextant Hask Plugin"
@@ -228,6 +229,52 @@ object HaskPlugin : PluginInitializer({
         description = "Prints all free variables of the expression"
         type = SingleReceiver
         executing { e, _ -> e.freeVariables.now.toString() }
+    }
+    registerCommand<ExprExpander, String> {
+        name = "save"
+        shortName = "save"
+        description = "Saves the selected editor to the specified file"
+        type = SingleReceiver
+        addParameter {
+            ofType<String>()
+            name = "file"
+            description = "The destination file"
+        }
+        applicableIf { it.isExpanded }
+        executing { expander, args ->
+            val file = args[0] as String
+            val path = Paths.get(file)
+            val output = expander.context.createOutput(path)
+            try {
+                output.writeUntyped(expander)
+                "Successfully saved to $path"
+            } catch (ex: Throwable) {
+                ex.message?.let { "Failure: $it" } ?: "Unknown error"
+            }
+        }
+    }
+    registerCommand<ExprExpander, String> {
+        name = "open"
+        shortName = "open"
+        description = "Reads the selected editor from the specified file"
+        type = SingleReceiver
+        addParameter {
+            ofType<String>()
+            name = "file"
+            description = "The input file"
+        }
+        applicableIf { !it.isExpanded }
+        executing { expander, args ->
+            val file = args[0] as String
+            val path = Paths.get(file)
+            val input = expander.context.createInput(path)
+            try {
+                input.readInplace(expander)
+                "Successfully read from $path"
+            } catch (ex: Throwable) {
+                ex.message?.let { "Failure: $it" } ?: "Unknown error"
+            }
+        }
     }
     inspection(::typeOkInspection)
     inspection(::typeConstraintInspection)
