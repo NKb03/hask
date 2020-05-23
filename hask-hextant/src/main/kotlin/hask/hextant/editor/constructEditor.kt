@@ -6,36 +6,47 @@ package hask.hextant.editor
 
 import hask.core.ast.Expr
 import hask.core.ast.Expr.*
-import hextant.Context
+import hask.core.rt.force
+import hask.core.rt.substitute
+import hask.core.topologicalSort
+import hask.core.type.makeGraph
+import hextant.*
 
-fun Expr.constructEditor(context: Context): ExprEditor<Expr> = when (this) {
-    is IntLiteral      -> IntLiteralEditor(context, num.toString())
-    is ValueOf         -> ValueOfEditor(context, name)
-    is Lambda          -> LambdaEditor(context).also { e ->
-        e.parameters.setEditors(parameters.map { p -> IdentifierEditor(context, p) })
-        e.body.setEditor(body)
-    }
-    is Apply           -> ApplyEditor(context).also { e ->
-        e.applied.setEditor(function)
-        e.arguments.setEditors(arguments.map {
-            ExprExpander(e.arguments.context, it.constructEditor(e.arguments.context))
-        })
-    }
-    is Let             -> LetEditor(context).also { e ->
-        e.bindings.setEditors(bindings.map { b -> b.constructEditor(e.bindings.context) })
-    }
-    is If              -> IfEditor(context).also { e ->
-        e.condition.setEditor(cond)
 
-    }
-    else -> throw UnsupportedOperationException("Constructing editor for $this is not supported")
+private fun <E : ExprEditor<*>> ExprExpander.setEditor(editor: E, initialize: (e: E) -> Unit) {
+    setEditor(editor)
+    initialize(editor)
 }
 
-private fun ExprExpander.setEditor(expr: Expr) {
-    setEditor(expr.constructEditor(context))
-}
-
-private fun Binding.constructEditor(context: Context) = BindingEditor(context).also { e ->
-    e.name.setText(name)
-    e.value.setEditor(value.constructEditor(e.value.context))
+fun ExprExpander.reconstruct(expr: Expr) {
+    when (expr) {
+        is IntLiteral -> setEditor(IntLiteralEditor(context, expr.num.toString()))
+        is ValueOf    -> setEditor(ValueOfEditor(context, expr.name))
+        is Lambda     -> setEditor(LambdaEditor(context)) { e ->
+            e.parameters.setEditors(expr.parameters.map { p -> IdentifierEditor(context, p) })
+            e.body.reconstruct(expr.body)
+        }
+        is Apply      -> setEditor(ApplyEditor(context)) { e ->
+            e.applied.reconstruct(expr.function)
+            e.arguments.resize(expr.arguments.size)
+            for ((i, a) in expr.arguments.withIndex()) {
+                e.arguments.editors.now[i].reconstruct(a)
+            }
+        }
+        is Let        -> setEditor(LetEditor(context)) { e ->
+            e.bindings.resize(expr.bindings.size)
+            for ((i, b) in expr.bindings.withIndex()) {
+                val be = e.bindings.editors.now[i]
+                be.name.setText(b.name)
+                be.value.reconstruct(b.value)
+            }
+            e.body.reconstruct(expr.body)
+        }
+        is If         -> setEditor(IfEditor(context)) { e ->
+            e.condition.reconstruct(expr.cond)
+            e.ifTrue.reconstruct(expr.then)
+            e.ifFalse.reconstruct(expr.otherwise)
+        }
+        else          -> TODO()
+    }
 }

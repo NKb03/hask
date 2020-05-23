@@ -9,10 +9,8 @@ import hextant.*
 import hextant.core.editor.TokenEditor
 import reaktive.value.now
 
-class IdentifierEditor(context: Context) : TokenEditor<String, IdentifierEditorView>(context) {
-    constructor(context: Context, text: String): this(context)  {
-        setText(text)
-    }
+class IdentifierEditor(context: Context, text: String) : TokenEditor<String, IdentifierEditorView>(context, text) {
+    constructor(context: Context): this(context, "")
 
     override fun compile(token: String): CompileResult<String> =
         token.takeIf { it.matches(IDENTIFIER_REGEX) }.okOrErr { "Invalid identifier $token" }
