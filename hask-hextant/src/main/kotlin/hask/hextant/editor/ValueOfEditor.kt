@@ -37,12 +37,5 @@ class ValueOfEditor(context: Context, text: String) : TokenEditor<ValueOf, Value
         views { displayHighlighting(highlight) }
     }
 
-    override fun evaluateOneStep(): ExprEditor<Expr> {
-        val name = result.now.map { it.name }.ifErr { return this }
-        return lookup(name) ?: this
-    }
-
-    override fun canEvalOneStep(): Boolean = evaluateOneStep() !== this
-
     override fun substitute(env: Map<String, ExprEditor<Expr>>): ExprEditor<*> = env[text.now] ?: this
 }

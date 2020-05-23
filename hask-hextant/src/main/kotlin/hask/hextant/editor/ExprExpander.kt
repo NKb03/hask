@@ -5,13 +5,15 @@
 package hask.hextant.editor
 
 import hask.core.ast.Expr
-import hask.core.rt.StackFrame
-import hask.core.rt.force
+import hask.core.ast.Expr.ValueOf
+import hask.core.rt.*
+import hask.core.rt.NormalForm.Irreducible
 import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.ti.ExpanderTypeInference
 import hask.hextant.ti.env.TIContext
 import hextant.*
+import hextant.base.EditorSnapshot
 import hextant.command.Command.Type.SingleReceiver
 import hextant.command.meta.ProvideCommand
 import hextant.core.editor.ConfiguredExpander
@@ -23,15 +25,14 @@ import reaktive.value.binding.map
 import reaktive.value.now
 import java.util.*
 
-class ExprExpander(context: Context) :
-    ConfiguredExpander<Expr, ExprEditor<Expr>>(config, context), ExprEditor<Expr> {
-    constructor(context: Context, editor: ExprEditor<*>?) : this(context) {
-        if (editor != null) setEditor(editor)
-    }
+class ExprExpander(context: Context, initial: ExprEditor<*>?) :
+    ConfiguredExpander<Expr, ExprEditor<Expr>>(config, context, initial), ExprEditor<Expr> {
+
+    constructor(context: Context) : this(context, null)
 
     override val freeVariables = editor.map { it?.freeVariables ?: emptyReactiveSet() }.flattenToSet()
 
-    private val evalStack: Deque<ExprEditor<Expr>> = LinkedList()
+    private val evalStack: Deque<EditorSnapshot<ExprEditor<Expr>>> = LinkedList()
 
     override fun onExpansion(editor: ExprEditor<Expr>) {
         if (this.inference.isActive) {
@@ -77,30 +78,50 @@ class ExprExpander(context: Context) :
     }
 
     fun evaluateOnce() {
-        val e = editor.now ?: return
-        evalStack.push(e)
-        evaluateOneStep()
+        saveSnapshot()
+        val e = result.now.ifErr { return }
+        val env = buildEnv()
+        val r = e.evaluateOnce(env)
+        if (r != null) reconstruct(r)
+    }
+
+    private fun saveSnapshot() {
+        val old = editor.now ?: return
+        evalStack.push(old.snapshot())
+    }
+
+    private fun buildEnv(): Map<String, Expr> {
+        val env = mutableMapOf<String, Expr>()
+        generateSequence(parent) { it.parent }.forEach { e ->
+            if (e is LetEditor) {
+                for (b in e.bindings.results.now) {
+                    b.ifOk { (n, v) -> env.putIfAbsent(n, v) }
+                }
+            }
+        }
+        return env
     }
 
     @ProvideCommand(shortName = "eval!", type = SingleReceiver)
     fun evaluateFully() {
+        saveSnapshot()
         val e = result.now.ifErr { return }
         val f = StackFrame.root()
+        val env = buildEnv()
+        for ((n, v) in env) f.put(n, v.eval(f))
         val r = e.force(f)
-        val old = editor.now!!
-        evalStack.push(old)
-        setEditor(r.toExpr().constructEditor(context))
+        reconstruct(r.toExpr(env.keys))
     }
 
     fun unevaluate() {
         val e = evalStack.pop()
-        setEditor(e)
+        paste(e)
     }
 
     fun unevaluateFully() {
         val e = evalStack.peekLast()
         evalStack.clear()
-        setEditor(e)
+        paste(e)
     }
 
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {
@@ -109,17 +130,6 @@ class ExprExpander(context: Context) :
 
     override fun buildEnv(env: EvaluationEnv) {
         throw AssertionError()
-    }
-
-    override fun evaluateOneStep(): ExprEditor<Expr> {
-        val e = editor.now ?: return this
-        val new = e.evaluateOneStep()
-        if (new is ExprExpander) {
-            val c = new.editor.now
-            if (c != null) paste(c.snapshot())
-            else reset()
-        } else if (new !== e) paste(new.snapshot())
-        return this
     }
 
     override fun substitute(env: Map<String, ExprEditor<Expr>>): ExprExpander {

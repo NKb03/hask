@@ -28,8 +28,6 @@ interface ExprEditor<out E : Expr> : Editor<E> {
 
     fun canEvalOneStep(): Boolean = false
 
-    fun evaluateOneStep(): ExprEditor<Expr> = this
-
     fun lookup(name: String): ExprEditor<Expr>? = when (val p = parent) {
         is ExprEditor<*>  -> p.lookup(name)
         is ExprListEditor -> (p.parent as? ExprEditor<Expr>)?.lookup(name)

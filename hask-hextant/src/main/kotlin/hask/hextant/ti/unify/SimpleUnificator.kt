@@ -10,7 +10,7 @@ import reaktive.dependencies
 import reaktive.value.*
 import reaktive.value.binding.binding
 
-class SimpleUnificator : Unificator {
+class SimpleUnificator(private val parent: SimpleUnificator? = null) : Unificator {
     private val constraints = mutableSetOf<Constraint>()
     private val subst = mutableMapOf<String, ReactiveVariable<Type>>()
     private var locked = false
@@ -23,6 +23,7 @@ class SimpleUnificator : Unificator {
     }
 
     override fun add(constraint: Constraint) {
+        parent?.add(constraint)
         executeSafely {
             constraints.add(constraint)
             unify(constraint.a, constraint.b, constraint)
@@ -67,6 +68,7 @@ class SimpleUnificator : Unificator {
     private fun subst(t: Type) = t.apply(substitutions())
 
     override fun removeAll(cs: Collection<Constraint>) {
+        parent?.removeAll(cs)
         executeSafely {
             if (constraints.intersect(cs).isEmpty()) {
                 println("empty")
@@ -103,4 +105,6 @@ class SimpleUnificator : Unificator {
     }
 
     override fun constraints(): Set<Constraint> = constraints
+
+    override fun child(): Unificator = SimpleUnificator(this)
 }

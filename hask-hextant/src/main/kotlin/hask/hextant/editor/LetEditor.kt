@@ -69,18 +69,6 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
 
     override fun canEvalOneStep(): Boolean = dependencyGraph.topologicalSort() != null
 
-    override fun evaluateOneStep(): ExprEditor<Expr> {
-        val ts = dependencyGraph.topologicalSort() ?: return this
-        val env = mutableMapOf<String, ExprEditor<Expr>>()
-        for (i in ts) {
-            val b = bindings.editors.now[i]
-            b.name.result.now.ifOk { name ->
-                env[name] = b.value.substitute(env)
-            }
-        }
-        return body.substitute(env)
-    }
-
     override fun lookup(name: String): ExprEditor<Expr>? =
         bindings.editors.now.find { it.name.result.now == ok(name) }?.value ?: super.lookup(name)
 }

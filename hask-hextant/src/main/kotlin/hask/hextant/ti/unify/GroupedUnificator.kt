@@ -10,7 +10,7 @@ import reaktive.dependencies
 import reaktive.value.*
 import reaktive.value.binding.binding
 
-class GroupedUnificator : Unificator {
+class GroupedUnificator(private val parent: GroupedUnificator? = null) : Unificator {
     private val adj = mutableMapOf<String, MutableSet<String>>()
     private val constraints = mutableMapOf<String, MutableSet<Constraint>>()
     private val subst = mutableMapOf<String, ReactiveVariable<Type>>()
@@ -19,6 +19,7 @@ class GroupedUnificator : Unificator {
     override fun add(constraint: Constraint) {
         //        println("adding $constraint")
         unify(constraint.a, constraint.b, constraint)
+        parent?.add(constraint)
     }
 
     private fun dfs(u: String, visited: MutableSet<String>) {
@@ -44,10 +45,12 @@ class GroupedUnificator : Unificator {
         for (cstr in c) {
             if (cstr != constraint) add(cstr)
         }
+        parent?.remove(constraint)
     }
 
     override fun removeAll(cs: Collection<Constraint>) {
         for (c in cs) remove(c)
+        parent?.removeAll(cs)
     }
 
     private fun unify(a: Type, b: Type, c: Constraint) {
@@ -114,4 +117,6 @@ class GroupedUnificator : Unificator {
     }
 
     override fun constraints(): Set<Constraint> = constraints.values.flatten().toSet()
+
+    override fun child(): Unificator = GroupedUnificator(this)
 }

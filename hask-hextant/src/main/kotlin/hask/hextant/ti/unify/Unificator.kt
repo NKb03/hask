@@ -21,4 +21,6 @@ interface Unificator {
     fun substituteNow(type: Type): Type = type.apply(substitutions())
 
     fun constraints(): Set<Constraint>
+
+    fun child(): Unificator
 }

@@ -56,30 +56,6 @@ class ApplyEditor private constructor(
         return this
     }
 
-    override fun evaluateOneStep(): ExprEditor<Expr> {
-        val applied = applied.editor.now as? LambdaEditor ?: return this
-        val parameters = applied.parameters.result.now.ifErr { return this }
-        val body = applied.body.editor.now ?: return this
-        val args = arguments.editors.now
-        val env = parameters.zip(args).toMap()
-        val b = body.substitute(env)
-        return when {
-            args.size < parameters.size -> {
-                val e = LambdaEditor(context)
-                e.parameters.setEditors(applied.parameters.editors.now.drop(args.size))
-                e.body.paste(b.snapshot())
-                e
-            }
-            args.size > parameters.size -> {
-                val e = ApplyEditor(context)
-                e.applied.paste(b.snapshot())
-                e.arguments.setEditors(args.drop(parameters.size))
-                e
-            }
-            else                        -> b
-        }
-    }
-
     override fun canEvalOneStep(): Boolean {
         val applied = applied.editor.now as? LambdaEditor ?: return false
         return applied.parameters.result.now.isOk && applied.body.isExpanded

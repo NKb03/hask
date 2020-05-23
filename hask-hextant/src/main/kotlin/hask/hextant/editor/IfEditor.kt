@@ -48,16 +48,6 @@ class IfEditor(
         ifFalse.collectReferences(variable, acc)
     }
 
-    override fun evaluateOneStep(): ExprEditor<Expr> {
-        val cond = condition.editor.now as? ValueOfEditor ?: return this
-        val value = cond.result.now.ifErr { return this }
-        return when (value.name) {
-            "True"  -> ifTrue
-            "False" -> ifFalse
-            else    -> this
-        }
-    }
-
     override fun substitute(env: Map<String, ExprEditor<Expr>>): ExprEditor<*> {
         condition.substitute(env)
         ifTrue.substitute(env)
