@@ -10,6 +10,8 @@ import hask.core.ast.Expr.*
 import hask.core.ast.Pattern.*
 import hask.core.rt.NormalForm.*
 import hask.core.rt.NormalForm.Function
+import hask.core.topologicalSort
+import hask.core.type.makeGraph
 
 
 fun Expr.force(frame: StackFrame = StackFrame.root()): NormalForm = when (this) {
@@ -63,11 +65,11 @@ fun Function.apply(arguments: List<Expr>, frame: StackFrame): NormalForm {
     for ((p, a) in parameters.zip(arguments)) newFrame.put(p, a.eval(frame))
     return when {
         parameters.size > arguments.size -> Function(parameters.drop(arguments.size), body, newFrame)
-        parameters.size < arguments.size -> body.force(newFrame).toExpr(frame.boundVariables()).apply(arguments.drop(parameters.size), frame)
+        parameters.size < arguments.size -> body.force(newFrame).toExpr(frame.boundVariables())
+            .apply(arguments.drop(parameters.size), frame)
         else                             -> body.force(newFrame)
     }
 }
-
 
 fun Expr.eval(frame: StackFrame = StackFrame.root()): Thunk = when (this) {
     is IntLiteral      -> Thunk.strict(IntValue(num))
@@ -92,4 +94,43 @@ fun Expr.substitute(subst: Map<String, Expr>): Expr = when (this) {
         arms.mapValues { (p, v) -> v.substitute(subst - p.boundVariables()) }
     )
     is ApplyBuiltin    -> ApplyBuiltin(name, parameters, returnType, arguments.map { it.substitute(subst) }, function)
+}
+
+fun Expr.isNormalForm() = when (this) {
+    is IntLiteral      -> true
+    is Lambda          -> true
+    is ConstructorCall -> true
+    else               -> false
+}
+
+fun Expr.evaluateOnce(env: Map<String, Expr>): Expr? = when (this) {
+    is ValueOf      -> env[name] ?: ValueOf(name)
+    is Apply        -> when (val f = function) {
+        is Lambda -> f.body.substitute(f.parameters.zip(arguments).toMap())
+        else      -> null
+    }
+    is Let          -> {
+        val g = makeGraph(env.keys)
+        val ts = g.topologicalSort()
+        val newEnv = mutableMapOf<String, Expr>()
+        if (ts == null) null else {
+            for (i in ts) {
+                val (n, v) = bindings[i]
+                newEnv[n] = v.substitute(newEnv)
+            }
+            body.substitute(newEnv)
+        }
+    }
+    is If           -> when (cond) {
+        ValueOf("True")  -> then
+        ValueOf("False") -> otherwise
+        else             -> null
+    }
+    is ApplyBuiltin -> {
+        if (arguments.all { it.isNormalForm() }) {
+            val values = arguments.map { it.force() }
+            function(values).toExpr(env.keys)
+        } else null
+    }
+    else            -> null
 }
