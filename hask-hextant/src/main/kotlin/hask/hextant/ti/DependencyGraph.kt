@@ -4,8 +4,7 @@
 
 package hask.hextant.ti
 
-import hask.core.condense
-import hask.core.topologicalSort
+import hask.core.*
 import hextant.*
 import kollektion.Cache
 import reaktive.event.unitEvent
@@ -26,6 +25,7 @@ class DependencyGraph(private val input: ReactiveList<Pair<EditorResult<String>,
     private val observer = input.observeEach { (n, v) ->
         n.observe { _ -> invalidate() } and v.observeSet { ch -> if (ch.element in boundVariables.now) invalidate() }
     } and input.observe { _ -> invalidate() }
+    private val vertices = Cache { computeVertices() }
     private val adjacencyList = Cache { computeAdjacencyList() }
     private val condensedGraph = Cache { adjacencyList.get().condense() }
     private val topologicalSorting = Cache { adjacencyList.get().topologicalSort() }
@@ -33,6 +33,7 @@ class DependencyGraph(private val input: ReactiveList<Pair<EditorResult<String>,
     private val topologicallySortedSCCs = Cache { condensedGraph.get().topologicalSort() }
 
     private fun invalidate() {
+        vertices.invalidate()
         adjacencyList.invalidate()
         condensedGraph.invalidate()
         topologicalSorting.invalidate()
@@ -41,10 +42,7 @@ class DependencyGraph(private val input: ReactiveList<Pair<EditorResult<String>,
     }
 
     private fun computeAdjacencyList(): List<List<Int>> {
-        val index = mutableMapOf<String, Int>()
-        for ((i, b) in input.now.withIndex()) {
-            b.first.now.ifOk { name -> index[name] = i }
-        }
+        val index = vertices.get()
         val adj = List(input.now.size) { mutableListOf<Int>() }
         for (b in input.now) {
             b.first.now.ifOk { name ->
@@ -58,7 +56,24 @@ class DependencyGraph(private val input: ReactiveList<Pair<EditorResult<String>,
         return adj
     }
 
+    private fun computeVertices(): Map<String, Int> {
+        val index = mutableMapOf<String, Int>()
+        for ((i, b) in input.now.withIndex()) {
+            b.first.now.ifOk { name -> index[name] = i }
+        }
+        return index
+    }
+
     fun topologicallySortedSCCs() = topologicallySortedSCCs.get()
 
     fun topologicalSort() = topologicalSorting.get()
+
+    fun vertices() = vertices.get()
+
+    fun hasCycle(source: Set<String>): Boolean {
+        val v = vertices.get()
+        val vertices = source.mapNotNull { name -> v[name] }
+        val adj = adjacencyList.get()
+        return adj.hasCycle(vertices)
+    }
 }

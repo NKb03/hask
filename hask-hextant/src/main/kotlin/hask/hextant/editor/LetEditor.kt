@@ -67,7 +67,7 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
         return this
     }
 
-    override fun canEvalOneStep(): Boolean = dependencyGraph.topologicalSort() != null
+    override fun canEvalOneStep(): Boolean = !dependencyGraph.hasCycle(body.freeVariables.now)
 
     override fun lookup(name: String): ExprEditor<Expr>? =
         bindings.editors.now.find { it.name.result.now == ok(name) }?.value ?: super.lookup(name)

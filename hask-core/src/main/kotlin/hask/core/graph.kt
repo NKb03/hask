@@ -16,6 +16,8 @@ private fun Graph.edges(): Sequence<Pair<Int, Int>> =
 
 data class CondensedGraph(val components: List<Collection<Int>>, val componentGraph: Graph)
 
+val CondensedGraph.size get() = componentGraph.size
+
 private open class DFS(val graph: Graph) {
     var idx = 0
     val num = IntArray(graph.size) { -1 }
@@ -80,7 +82,7 @@ fun Graph.condense(): CondensedGraph = with(Tarjan(this)) {
     CondensedGraph(components, adj)
 }
 
-fun Graph.topologicalSort(): List<Int>? {
+fun Graph.topologicalSort(): List<Int> {
     val inDegree = IntArray(size)
     for ((_, v) in edges()) inDegree[v]++
     val q = indices.filterTo(LinkedList()) { u -> inDegree[u] == 0 }
@@ -93,10 +95,26 @@ fun Graph.topologicalSort(): List<Int>? {
             if (inDegree[v] == 0) q.offer(v)
         }
     }
-    return res.takeIf { it.size == size }
+    return res
 }
 
 fun CondensedGraph.topologicalSort(): List<Collection<Int>> {
-    val ts = componentGraph.topologicalSort() ?: throw AssertionError("Condensed graph must have a topological sorting")
+    val ts = componentGraph.topologicalSort()
+    if (ts.size != size) throw AssertionError("Condensed graph must have a topological sorting")
     return ts.map { i -> components[i] }
+}
+
+fun Graph.hasCycle(source: Collection<Int>): Boolean {
+    val q: Queue<Int> = LinkedList(source)
+    val visited = BooleanArray(size)
+    for (u in source) visited[u] = true
+    while (q.isNotEmpty()) {
+        val u = q.poll()
+        for (v in edgesFrom(u)) {
+            if (visited[v]) return true
+            visited[v] = true
+            q.offer(v)
+        }
+    }
+    return false
 }

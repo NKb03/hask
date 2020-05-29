@@ -63,7 +63,6 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
             val view = group.getViewOf(arg1)
             view.focus()
         }
-
     }
 
     @ProvideCommand(shortName = "let", type = SingleReceiver)
@@ -88,18 +87,6 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
     private fun saveSnapshot() {
         val old = editor.now ?: return
         evalStack.push(old.snapshot())
-    }
-
-    private fun buildEnv(): Map<String, Expr> {
-        val env = mutableMapOf<String, Expr>()
-        generateSequence(parent) { it.parent }.forEach { e ->
-            if (e is LetEditor) {
-                for (b in e.bindings.results.now) {
-                    b.ifOk { (n, v) -> env.putIfAbsent(n, v) }
-                }
-            }
-        }
-        return env
     }
 
     @ProvideCommand(shortName = "eval!", type = SingleReceiver)
@@ -129,7 +116,7 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
     }
 
     override fun buildEnv(env: EvaluationEnv) {
-        throw AssertionError()
+        editor.now?.buildEnv(env)
     }
 
     override fun substitute(env: Map<String, ExprEditor<Expr>>): ExprExpander {

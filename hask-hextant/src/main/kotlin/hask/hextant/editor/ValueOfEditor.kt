@@ -33,6 +33,8 @@ class ValueOfEditor(context: Context, text: String) : TokenEditor<ValueOf, Value
         result.now.ifOk { if (it.name == variable) acc.add(this) }
     }
 
+    override fun canEvalOneStep(): Boolean = result.now.map { (name) -> name in buildEnv() }.ifErr { false }
+
     fun setHighlighting(highlight: Boolean) {
         views { displayHighlighting(highlight) }
     }

@@ -113,13 +113,11 @@ fun Expr.evaluateOnce(env: Map<String, Expr>): Expr? = when (this) {
         val g = makeGraph(env.keys)
         val ts = g.topologicalSort()
         val newEnv = mutableMapOf<String, Expr>()
-        if (ts == null) null else {
-            for (i in ts) {
-                val (n, v) = bindings[i]
-                newEnv[n] = v.substitute(newEnv)
-            }
-            body.substitute(newEnv)
+        for (i in ts) {
+            val (n, v) = bindings[i]
+            newEnv[n] = v.substitute(newEnv)
         }
+        body.substitute(newEnv)
     }
     is If           -> when (cond) {
         ValueOf("True")  -> then
