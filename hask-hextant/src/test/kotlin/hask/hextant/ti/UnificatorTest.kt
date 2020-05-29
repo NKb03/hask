@@ -131,10 +131,9 @@ class UnificatorTest {
     @Test
     fun test() {
         test {
-            "j" bind "int -> n"
-            "int -> int -> int" bind "z -> l"
-            "l" bind "n -> k"
-            "j" bind "int -> z"
+            "int -> int -> int" bind "d -> int -> a"
+            "a" bind "c"
+            "int" bind "int -> b"
         }
     }
 }

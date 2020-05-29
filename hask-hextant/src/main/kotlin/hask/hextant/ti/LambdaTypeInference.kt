@@ -40,6 +40,7 @@ class LambdaTypeInference(
             typeVars.add(v)
             p.ifOk { name -> bodyEnv.bind(name, v) }
         }
+        parametersChange.fire()
     }
 
     override fun children(): Collection<TypeInference> = listOf(body)
