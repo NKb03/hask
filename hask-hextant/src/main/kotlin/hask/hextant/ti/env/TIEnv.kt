@@ -4,16 +4,18 @@
 
 package hask.hextant.ti.env
 
-import hask.core.type.*
+import hask.core.type.Type
 import hask.core.type.Type.*
+import hask.core.type.TypeScheme
 import hask.hextant.ti.Builtins.BoolT
-import hextant.*
 import kollektion.Counter
 import reaktive.asValue
 import reaktive.set.*
 import reaktive.value.*
-import reaktive.value.binding.map
-import reaktive.value.binding.orElse
+import reaktive.value.binding.*
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.set
 
 class TIEnv(
     private val parent: TIEnv?,
@@ -21,7 +23,7 @@ class TIEnv(
 ) {
     constructor(namer: ReleasableNamer) : this(root(namer), namer)
 
-    private val declaredBindings = mutableMapOf<String, CompileResult<TypeScheme>>()
+    private val declaredBindings = mutableMapOf<String, TypeScheme>()
 
     private val fvSet = reactiveSet<String>()
 
@@ -30,19 +32,16 @@ class TIEnv(
     val freeTypeVars: ReactiveSet<String> =
         if (parent == null) fvSet else fvSet + parent.freeTypeVars
 
-    private val queries = mutableMapOf<String, MutableList<ReactiveVariable<CompileResult<Type>?>>>()
+    private val queries = mutableMapOf<String, MutableList<ReactiveVariable<Type?>>>()
+    private val isResolvedQueries = mutableMapOf<String, ReactiveVariable<Boolean>>()
 
-    private fun getQueries(name: String): List<ReactiveVariable<CompileResult<Type>?>> = queries[name] ?: emptyList()
-
-    fun bind(name: String, type: CompileResult<TypeScheme>) {
-        if (declaredBindings[name] == type) return
-        declaredBindings[name] = type
-        type.ifOk { myFVS.addAll(it.fvs()) }
-        getQueries(name).forEach { it.set(type.map { it.instantiate(namer) }) }
-    }
+    private fun getQueries(name: String): List<ReactiveVariable<Type?>> = queries[name] ?: emptyList()
 
     fun bind(name: String, type: TypeScheme) {
-        bind(name, ok(type))
+        if (declaredBindings[name] == type) return
+        declaredBindings[name] = type
+        myFVS.addAll(type.fvs())
+        getQueries(name).forEach { it.set(type.instantiate(namer)) }
     }
 
     fun bind(name: String, type: Type) {
@@ -52,13 +51,13 @@ class TIEnv(
     fun unbind(name: String) {
         if (name !in declaredBindings) return
         val type = declaredBindings.remove(name)!!
-        type.ifOk { myFVS.removeAll(it.fvs()) }
+        myFVS.removeAll(type.fvs())
         getQueries(name).forEach { it.set(null) }
     }
 
-    fun resolve(name: String): ReactiveValue<CompileResult<Type>?> {
+    fun resolve(name: String): ReactiveValue<Type?> {
         val queries = queries.getOrPut(name) { mutableListOf() }
-        val tpe = declaredBindings[name]?.map { it.instantiate(namer) }
+        val tpe = declaredBindings[name]?.instantiate(namer)
         val referent = reactiveVariable(tpe)
         queries.add(referent)
         return if (parent != null)
@@ -66,9 +65,9 @@ class TIEnv(
         else referent
     }
 
-    val now: Map<String, CompileResult<TypeScheme>>
+    val now: Map<String, TypeScheme>
         get() {
-            val res = mutableMapOf<String, CompileResult<TypeScheme>>()
+            val res = mutableMapOf<String, TypeScheme>()
             var env: TIEnv = this
             while (true) {
                 res.putAll(env.declaredBindings)
@@ -91,6 +90,11 @@ class TIEnv(
         queries.forEach { (_, q) ->
             q.forEach { it.set(null) }
         }
+    }
+
+    fun isResolved(name: String): ReactiveValue<Boolean> {
+        val q = isResolvedQueries.getOrPut(name) { reactiveVariable(name in declaredBindings) }
+        return if (parent != null) q.or(parent.isResolved(name)) else q
     }
 
     companion object {

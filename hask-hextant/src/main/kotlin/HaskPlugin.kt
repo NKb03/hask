@@ -7,7 +7,6 @@ import hask.hextant.view.IdentifierEditorControl
 import hask.hextant.view.ValueOfEditorControl
 import hextant.*
 import hextant.command.Command.Type.SingleReceiver
-import hextant.command.parameter
 import hextant.completion.NoCompleter
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
@@ -108,7 +107,7 @@ object HaskPlugin : PluginInitializer({
                     }
                 }
                 on("Ctrl+Shift+T") {
-                    val t = e.type.now.ifErr { return@on }
+                    val t = e.type.now
                     PopOver(Text(t.toString())).run {
                         isHideOnEscape = true
                         show(this@apply)
@@ -276,7 +275,6 @@ object HaskPlugin : PluginInitializer({
             }
         }
     }
-    inspection(::typeOkInspection)
     inspection(::typeConstraintInspection)
     inspection(::betaConversion)
     stylesheet("hextant/hask/style.css")

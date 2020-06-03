@@ -2,11 +2,10 @@ package hask.hextant.ti
 
 import hask.core.type.Type
 import hask.core.type.Type.Var
+import hask.core.type.Type.Wildcard
 import hask.hextant.ti.Builtins.BoolT
 import hask.hextant.ti.env.TIContext
-import hextant.*
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import reaktive.value.*
 
 class IfTypeInference(
     context: TIContext,
@@ -14,23 +13,23 @@ class IfTypeInference(
     private val then: TypeInference,
     private val otherwise: TypeInference
 ) : AbstractTypeInference(context) {
-    private val result by typeVariable()
+    private val result by lazy { Var(freshName()) }
 
-    private var _type = reactiveVariable(childErr<Type>())
-    override val type get() = _type
+    private var _type = reactiveVariable<Type>(Wildcard)
+    override val type: ReactiveValue<Type> get() = _type
 
     init {
         dependsOn(condition.type, then.type, otherwise.type)
     }
 
     override fun onActivate() {
-        _type.set(ok(Var(result)))
+        _type.set(result)
     }
 
     override fun doRecompute() {
-        condition.type.now.ifOk { t -> addConstraint(t, BoolT) }
-        then.type.now.ifOk { t -> addConstraint(t, Var(result)) }
-        otherwise.type.now.ifOk { t -> addConstraint(t, Var(result)) }
+        addConstraint(condition.type.now, BoolT)
+        addConstraint(then.type.now, result)
+        addConstraint(otherwise.type.now, result)
     }
 
     override fun children(): Collection<TypeInference> = listOf(condition, then, otherwise)

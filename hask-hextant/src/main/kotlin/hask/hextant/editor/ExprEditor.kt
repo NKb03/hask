@@ -8,13 +8,12 @@ import hask.core.ast.Expr
 import hask.core.type.Type
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.ti.TypeInference
-import hextant.CompileResult
 import hextant.Editor
 import reaktive.set.ReactiveSet
 import reaktive.value.ReactiveValue
 
 interface ExprEditor<out E : Expr> : Editor<E> {
-    val type: ReactiveValue<CompileResult<Type>> get() = inference.type
+    val type: ReactiveValue<Type> get() = inference.type
 
     val inference: TypeInference
 

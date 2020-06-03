@@ -5,15 +5,17 @@
 package hask.hextant.editor
 
 import hask.hextant.view.IdentifierEditorView
-import hextant.*
+import hextant.Context
 import hextant.core.editor.TokenEditor
 import reaktive.value.now
+import validated.*
+import validated.Validated.Valid
 
 class IdentifierEditor(context: Context, text: String) : TokenEditor<String, IdentifierEditorView>(context, text) {
     constructor(context: Context): this(context, "")
 
-    override fun compile(token: String): CompileResult<String> =
-        token.takeIf { it.matches(IDENTIFIER_REGEX) }.okOrErr { "Invalid identifier $token" }
+    override fun compile(token: String): Validated<String> =
+        token.takeIf { it.matches(IDENTIFIER_REGEX) }.validated { invalid("Invalid identifier $token") }
 
     private var refactoring = false
 
@@ -28,7 +30,7 @@ class IdentifierEditor(context: Context, text: String) : TokenEditor<String, Ide
     }
 
     private val refactor = result.observe { _, old, new ->
-        if (refactoring && new is Ok && old is Ok) {
+        if (refactoring && new is Valid && old is Valid) {
             withAllReferences(old.value) { refs ->
                 refs.forEach { ref ->
                     ref.setText(new.value)
@@ -52,12 +54,12 @@ class IdentifierEditor(context: Context, text: String) : TokenEditor<String, Ide
     }
 
     fun highlightReferences() {
-        val name = result.now.ifErr { return }
+        val name = result.now.ifInvalid { return }
         withAllReferences(name) { refs -> refs.forEach { ref -> ref.setHighlighting(true) } }
     }
 
     fun stopHighlightingReferences() {
-        val name = result.now.ifErr { return }
+        val name = result.now.ifInvalid { return }
         withAllReferences(name) { refs -> refs.forEach { ref -> ref.setHighlighting(false) } }
     }
 

@@ -5,8 +5,8 @@
 package hask.hextant.eval
 
 import hask.core.ast.Expr
-import hask.hextant.editor.ExprEditor
 import hask.core.type.Type
+import hask.hextant.editor.ExprEditor
 
 class EvaluationEnv {
     private val definitions = mutableMapOf<String, Resolution>()

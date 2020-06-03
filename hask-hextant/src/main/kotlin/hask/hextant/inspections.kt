@@ -5,20 +5,27 @@
 package hask.hextant
 
 import hask.core.ast.Expr.Lambda
-import hask.hextant.editor.ApplyEditor
-import hask.hextant.editor.ExprEditor
-import hextant.*
+import hask.hextant.context.HaskInternal
+import hask.hextant.editor.*
+import hask.hextant.ti.env.TIContext
 import hextant.inspect.inspection
 import reaktive.collection.binding.isEmpty
-import reaktive.value.binding.and
-import reaktive.value.binding.map
+import reaktive.value.binding.*
 import reaktive.value.now
+import reaktive.value.reactiveValue
+import validated.*
 
-fun typeOkInspection(inspected: ExprEditor<*>) = inspection(inspected) {
-    description = "Reports untypable terms"
+fun unresolvedVariableInspection(inspected: ValueOfEditor) = inspection(inspected) {
+    description = "Reports unresolved variables"
     isSevere(true)
-    message { (inspected.type.now as Err).message }
-    preventingThat(inspected.type.map { it.isErr })
+    val ctx = inspected.context[HaskInternal, TIContext]
+    checkingThat(inspected.result.flatMap { r ->
+        r.fold(
+            onValid = { ctx.env.isResolved(it.name) },
+            onInvalid = { reactiveValue(true) }
+        )
+    })
+    message { "${inspected.result.now}" }
 }
 
 fun typeConstraintInspection(inspected: ExprEditor<*>) = inspection(inspected) {
@@ -36,7 +43,7 @@ fun betaConversion(inspected: ApplyEditor) = inspection(inspected) {
     isSevere(false)
     message { "Unnecessary lambda abstraction" }
     preventingThat(inspected.applied.result.map {
-        it.map { a -> a is Lambda }.ifErr { false }
-    } and inspected.arguments.result.map { it.isOk })
+        it.map { a -> a is Lambda }.ifInvalid { false }
+    } and inspected.arguments.result.map { it.isValid })
     addFix("Replace all usages of abstracted variable by argument", eval, inspected.expander!!)
 }

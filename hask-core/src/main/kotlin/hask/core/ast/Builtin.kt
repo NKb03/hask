@@ -1,7 +1,6 @@
 package hask.core.ast
 
 import hask.core.ast.Expr.ApplyBuiltin
-import hask.core.ast.Expr.ValueOf
 import hask.core.rt.NormalForm
 import hask.core.rt.NormalForm.ADTValue
 import hask.core.rt.NormalForm.IntValue

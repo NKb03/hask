@@ -5,7 +5,6 @@
 package hask.hextant.editor
 
 import hask.core.ast.Expr.Binding
-import hask.hextant.ti.unify.SimpleUnificator
 import hextant.Context
 import hextant.core.editor.ListEditor
 

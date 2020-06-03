@@ -7,11 +7,14 @@ package hask.hextant.editor
 import hask.core.ast.Expr
 import hask.core.ast.Expr.If
 import hask.hextant.context.HaskInternal
-import hask.hextant.ti.*
+import hask.hextant.ti.IfTypeInference
 import hask.hextant.ti.env.TIContext
-import hextant.*
+import hextant.Context
 import hextant.base.CompoundEditor
+import hextant.core.editor.composeResult
 import reaktive.value.now
+import validated.ifInvalid
+import validated.reaktive.ReactiveValidated
 
 class IfEditor(
     context: Context
@@ -31,7 +34,7 @@ class IfEditor(
         if (otherwise != null) ifFalse.setEditor(otherwise)
     }
 
-    override val result: EditorResult<If> = result3(condition, ifTrue, ifFalse) { c, t, f -> ok(If(c, t, f)) }
+    override val result: ReactiveValidated<If> = composeResult(condition, ifTrue, ifFalse)
 
     override val freeVariables = condition.freeVariables + ifTrue.freeVariables + ifFalse.freeVariables
 
@@ -57,7 +60,7 @@ class IfEditor(
 
     override fun canEvalOneStep(): Boolean {
         val cond = condition.editor.now as? ValueOfEditor ?: return false
-        val v = cond.result.now.ifErr { return false }
+        val v = cond.result.now.ifInvalid { return false }
         return v.name in setOf("True", "False")
     }
 }

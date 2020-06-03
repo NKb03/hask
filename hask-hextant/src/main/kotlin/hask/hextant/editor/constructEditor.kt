@@ -6,11 +6,6 @@ package hask.hextant.editor
 
 import hask.core.ast.Expr
 import hask.core.ast.Expr.*
-import hask.core.rt.force
-import hask.core.rt.substitute
-import hask.core.topologicalSort
-import hask.core.type.makeGraph
-import hextant.*
 
 
 private fun <E : ExprEditor<*>> ExprExpander.setEditor(editor: E, initialize: (e: E) -> Unit) {

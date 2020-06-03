@@ -8,8 +8,6 @@ import hask.core.ast.Expr
 import hask.core.rt.eval
 import hask.core.type.*
 import hask.core.type.Type.Var
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.dsl.Root
 import org.spekframework.spek2.dsl.TestContainer
 import kotlin.reflect.KClass
 

@@ -8,17 +8,19 @@ import hask.core.type.Type
 import hask.core.type.Type.Var
 import hask.core.type.functionType
 import hask.hextant.ti.env.TIContext
-import hextant.*
 import reaktive.dependencies
 import reaktive.event.unitEvent
 import reaktive.list.ReactiveList
 import reaktive.set.asSet
+import reaktive.value.ReactiveValue
 import reaktive.value.binding.binding
 import reaktive.value.now
+import validated.Validated
+import validated.ifValid
 
 class LambdaTypeInference(
     context: TIContext,
-    private val parameters: ReactiveList<CompileResult<String>>,
+    private val parameters: ReactiveList<Validated<String>>,
     private val body: TypeInference
 ) : AbstractTypeInference(context) {
     private val bodyEnv get() = body.context.env
@@ -38,14 +40,14 @@ class LambdaTypeInference(
         for (p in parameters.now) {
             val v = Var(freshName())
             typeVars.add(v)
-            p.ifOk { name -> bodyEnv.bind(name, v) }
+            p.ifValid { name -> bodyEnv.bind(name, v) }
         }
         parametersChange.fire()
     }
 
     override fun children(): Collection<TypeInference> = listOf(body)
 
-    override val type = binding<CompileResult<Type>>(dependencies(body.type, parametersChange.stream)) {
-        body.type.now.map { t -> functionType(typeVars, t) }
+    override val type: ReactiveValue<Type> = binding<Type>(dependencies(body.type, parametersChange.stream)) {
+        functionType(typeVars, body.type.now)
     }
 }

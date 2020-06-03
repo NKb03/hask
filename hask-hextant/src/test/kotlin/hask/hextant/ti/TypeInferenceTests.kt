@@ -8,19 +8,19 @@ import com.natpryce.hamkrest.*
 import com.natpryce.hamkrest.should.shouldMatch
 import hask.core.type.Type.INT
 import hask.hextant.ti.env.TIContext
-import hextant.ok
 import org.junit.jupiter.api.Test
 import reaktive.list.reactiveList
 import reaktive.set.emptyReactiveSet
 import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
+import validated.valid
 
 class TypeInferenceTests {
     @Test
     fun `simple application type inference`() { // (\x -> x) 1 : int
         val context = TIContext.root()
-        val parameters = reactiveList(ok("x"))
-        val ref = reactiveVariable(ok("x"))
+        val parameters = reactiveList(valid("x"))
+        val ref = reactiveVariable(valid("x"))
         val lambdaContext = context.child()
         val body = ReferenceTypeInference(lambdaContext.child(), ref)
         body.activate()
@@ -45,8 +45,8 @@ class TypeInferenceTests {
     @Test
     fun `occurs check should fail`() { //\x -> x x
         val context = TIContext.root()
-        val parameters = reactiveList(ok("x"))
-        val ref = reactiveVariable(ok("x"))
+        val parameters = reactiveList(valid("x"))
+        val ref = reactiveVariable(valid("x"))
         val bodyContext = context.child()
         val body = ApplyTypeInference(
             bodyContext,
@@ -71,25 +71,25 @@ class TypeInferenceTests {
         val lambdaBodyCtx = letValue1Ctx.child()
         val letValue2Ctx = letBody1Ctx.child()
         val letBody2Ctx = letBody1Ctx.child()
-        val lambdaBody = ReferenceTypeInference(lambdaBodyCtx, reactiveValue(ok("x")))
+        val lambdaBody = ReferenceTypeInference(lambdaBodyCtx, reactiveValue(valid("x")))
         lambdaBody.activate()
-        val letValue1 = LambdaTypeInference(letValue1Ctx, reactiveList(ok("x")), lambdaBody)
+        val letValue1 = LambdaTypeInference(letValue1Ctx, reactiveList(valid("x")), lambdaBody)
         letValue1.activate()
-        val letValue2 = ReferenceTypeInference(letValue2Ctx, reactiveValue(ok("x")))
+        val letValue2 = ReferenceTypeInference(letValue2Ctx, reactiveValue(valid("x")))
         letValue2.activate()
         val letBody2 = IntLiteralTypeInference(letBody2Ctx)
         letBody2.activate()
         val letBody1 = LetTypeInference(
             letBody1Ctx,
-            { listOf(Pair(ok("x"), letValue2)) },
-            DependencyGraph(reactiveList(Pair(reactiveValue(ok("x")), emptyReactiveSet()))),
+            { listOf(Pair(valid("x"), letValue2)) },
+            DependencyGraph(reactiveList(Pair(reactiveValue(valid("x")), emptyReactiveSet()))),
             letBody2
         )
         letBody1.activate()
         val root = LetTypeInference(
             rootCtx,
-            { listOf(Pair(ok("id"), letValue1)) },
-            DependencyGraph(reactiveList(Pair(reactiveValue(ok("id")), emptyReactiveSet()))),
+            { listOf(Pair(valid("id"), letValue1)) },
+            DependencyGraph(reactiveList(Pair(reactiveValue(valid("id")), emptyReactiveSet()))),
             letBody1
         )
         root.activate()

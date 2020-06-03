@@ -8,8 +8,10 @@ import hask.core.ast.Expr
 import hask.hextant.context.HaskInternal
 import hask.hextant.ti.TypeInference
 import hask.hextant.ti.env.TIContext
-import hextant.*
+import hextant.Context
+import hextant.Editor
 import reaktive.value.now
+import validated.ifValid
 
 fun Context.withTIContext(create: (TIContext) -> TIContext): Context {
     return Context.newInstance(this) {
@@ -30,7 +32,7 @@ fun ExprEditor<*>.buildEnv(): Map<String, Expr> {
     generateSequence(parent) { it.parent }.forEach { e ->
         if (e is LetEditor) {
             for (b in e.bindings.results.now) {
-                b.ifOk { (n, v) -> env.putIfAbsent(n, v) }
+                b.ifValid { (n, v) -> env.putIfAbsent(n, v) }
             }
         }
     }

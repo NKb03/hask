@@ -5,24 +5,24 @@
 package hask.hextant.editor
 
 import hask.core.ast.Expr
-import hask.core.ast.Expr.ValueOf
 import hask.core.rt.*
-import hask.core.rt.NormalForm.Irreducible
 import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.ti.ExpanderTypeInference
 import hask.hextant.ti.env.TIContext
-import hextant.*
+import hextant.Context
 import hextant.base.EditorSnapshot
 import hextant.command.Command.Type.SingleReceiver
 import hextant.command.meta.ProvideCommand
 import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.ExpanderConfig
+import hextant.snapshot
 import hextant.undo.compoundEdit
 import reaktive.set.binding.flattenToSet
 import reaktive.set.emptyReactiveSet
 import reaktive.value.binding.map
 import reaktive.value.now
+import validated.ifInvalid
 import java.util.*
 
 class ExprExpander(context: Context, initial: ExprEditor<*>?) :
@@ -77,8 +77,8 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
     }
 
     fun evaluateOnce() {
+        val e = result.now.ifInvalid { return }
         saveSnapshot()
-        val e = result.now.ifErr { return }
         val env = buildEnv()
         val r = e.evaluateOnce(env)
         if (r != null) reconstruct(r)
@@ -92,7 +92,7 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
     @ProvideCommand(shortName = "eval!", type = SingleReceiver)
     fun evaluateFully() {
         saveSnapshot()
-        val e = result.now.ifErr { return }
+        val e = result.now.ifInvalid { return }
         val f = StackFrame.root()
         val env = buildEnv()
         for ((n, v) in env) f.put(n, v.eval(f))

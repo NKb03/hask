@@ -59,8 +59,7 @@ class GroupedUnificator(private val parent: GroupedUnificator? = null) : Unifica
         for (v in t1.fvs()) constraints(v).add(c)
         for (v in t2.fvs()) constraints(v).add(c)
         when {
-            t1 == t2                                       -> {
-            }
+            t1 == t2 || t1 == Wildcard || t2 == Wildcard   -> return
             t1 is Var && t1.name !in t2.fvs()              -> bind(t1.name, t2)
             t2 is Var && t2.name !in t1.fvs()              -> bind(t2.name, t1)
             t1 is Func && t2 is Func                       -> {
@@ -107,7 +106,7 @@ class GroupedUnificator(private val parent: GroupedUnificator? = null) : Unifica
         subst.mapValues { (_, s) -> s.now }.filter { (n, s) -> s != Var(n) }
 
     override fun substitute(type: Type): ReactiveValue<Type> = when (type) {
-        INT                 -> reactiveValue(INT)
+        INT, Wildcard       -> reactiveValue(type)
         is Var              -> subst(type.name)
         is Func             -> binding(substitute(type.from), substitute(type.to)) { a, b -> Func(a, b) }
         is ParameterizedADT -> {

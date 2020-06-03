@@ -10,7 +10,6 @@ import hask.hextant.context.HaskInternal
 import hask.hextant.editor.ExprExpander
 import hask.hextant.ti.env.TIContext
 import hextant.*
-import hextant.SelectionDistributor.Companion
 import hextant.command.line.*
 import hextant.fx.registerShortcuts
 import hextant.main.HextantApplication
@@ -20,7 +19,7 @@ import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType.INFORMATION
 import javafx.scene.layout.VBox
 import reaktive.value.now
-import java.nio.file.Paths
+import validated.ifInvalid
 
 class HaskEditorApplication : HextantApplication() {
     override fun createContext(root: Context): Context = HextantPlatform.defaultContext(root).apply {
@@ -40,7 +39,7 @@ class HaskEditorApplication : HextantApplication() {
         val box = VBox(editorView, cli)
         box.registerShortcuts {
             on("Ctrl+X") {
-                val expr = editor.result.now.ifErr { return@on }
+                val expr = editor.result.now.ifInvalid { return@on }
                 val result = expr.eval().force()
                 Alert(INFORMATION, result.toString()).show()
             }

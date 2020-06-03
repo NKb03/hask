@@ -8,8 +8,9 @@ import bundles.Property
 import hask.core.type.Type
 import hask.core.type.TypeScheme
 import hask.hextant.context.HaskInternal
-import hask.hextant.ti.unify.*
-import hextant.*
+import hask.hextant.ti.unify.SimpleUnificator
+import hask.hextant.ti.unify.Unificator
+
 data class TIContext(
     val namer: ReleasableNamer,
     val unificator: Unificator,
@@ -17,17 +18,9 @@ data class TIContext(
 ) {
     fun child() = copy(env = TIEnv(env, namer))
 
-    fun displayType(type: CompileResult<Type>) =  when (type) {
-        is Err   -> "[ERROR: ${type.message}]"
-        is Ok    -> type.value.apply(unificator.substitutions()).toString()
-        ChildErr -> "[ERROR]"
-    }
+    fun displayType(type: Type) = type.apply(unificator.substitutions()).toString()
 
-    fun displayTypeScheme(type: CompileResult<TypeScheme>) =  when (type) {
-        is Err   -> "[ERROR: ${type.message}]"
-        is Ok    -> type.value.apply(unificator.substitutions()).toString()
-        ChildErr -> "[ERROR]"
-    }
+    fun displayTypeScheme(type: TypeScheme) = type.apply(unificator.substitutions()).toString()
 
     companion object : Property<TIContext, HaskInternal, HaskInternal>("Type Inference Context") {
         fun root(): TIContext {

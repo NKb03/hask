@@ -7,8 +7,6 @@ package hask.hextant.ti
 import hask.core.type.Type
 import hask.hextant.ti.env.TIContext
 import hask.hextant.ti.unify.Constraint
-import hextant.CompileResult
-import hextant.ifOk
 import reaktive.*
 import reaktive.set.ReactiveSet
 import reaktive.set.reactiveSet
@@ -109,11 +107,11 @@ abstract class AbstractTypeInference(final override val context: TIContext) : Ty
         dependsOn(dependencies(*deps))
     }
 
-    protected fun bind(a: ReactiveValue<CompileResult<Type>>, b: Type) {
-        a.now.ifOk { t -> addConstraint(t, b) }
+    protected fun bind(a: ReactiveValue<Type>, b: Type) {
+        addConstraint(a.now, b)
         val o = a.observe { old, new ->
-            old.ifOk { t -> removeConstraint(t, b) }
-            new.ifOk { t -> addConstraint(t, b) }
+            removeConstraint(old, b)
+            addConstraint(new, b)
         }
         addObserver(o, killOnRecompute = true)
     }

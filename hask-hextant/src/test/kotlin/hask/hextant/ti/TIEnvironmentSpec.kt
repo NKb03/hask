@@ -5,11 +5,9 @@
 package hask.hextant.ti
 
 import com.natpryce.hamkrest.should.shouldMatch
-import hask.core.type.Type
 import hask.core.type.Type.INT
 import hask.hextant.ti.env.ReleasableNamer
 import hask.hextant.ti.env.TIEnv
-import hextant.Ok
 import hextant.test.*
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.*
@@ -28,7 +26,7 @@ object TIEnvironmentSpec : Spek({
             }
         }
         on("binding some variable") {
-            env.bind("v1", Ok(INT.generalize(emptySet())))
+            env.bind("v1", INT.generalize(emptySet()))
             it("should set the resolved variable type") {
                 t1.now shouldEqual INT
             }
@@ -42,7 +40,7 @@ object TIEnvironmentSpec : Spek({
         given("a child environment") {
             val child = env.child()
             it("should have all the entries of the parent env") {
-                env.bind("v1", Ok(INT.generalize(emptySet())))
+                env.bind("v1", INT.generalize(emptySet()))
                 child.now shouldEqual mapOf("v1" to INT.generalize(emptySet()))
                 child.resolve("v1").now shouldEqual INT
             }

@@ -9,11 +9,15 @@ import hask.core.ast.Expr.Lambda
 import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.eval.EvaluationEnv.Resolution.Parameter
-import hask.hextant.ti.*
+import hask.hextant.ti.LambdaTypeInference
 import hask.hextant.ti.env.TIContext
-import hextant.*
+import hextant.Context
 import hextant.base.CompoundEditor
-import reaktive.set.*
+import hextant.core.editor.composeResult
+import reaktive.set.asSet
+import validated.*
+import validated.reaktive.ReactiveValidated
+import validated.reaktive.composeReactive
 
 class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEditor<Lambda> {
     val parameters by child(IdentifierListEditor(context))
@@ -28,10 +32,7 @@ class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEdit
         if (t != null) body.setEditor(t)
     }
 
-    override val result: EditorResult<Lambda> = result2(parameters, body) { params, body ->
-        ok(Lambda(params, body))
-    }
-
+    override val result: ReactiveValidated<Lambda> = composeResult(parameters, body)
     override val freeVariables = body.freeVariables - parameters.results.asSet().map { it.orNull() }
 
     override val inference = LambdaTypeInference(
@@ -41,14 +42,14 @@ class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEdit
     )
 
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {
-        if (parameters.results.now.none { it == ok(variable) }) {
+        if (parameters.results.now.none { it == valid(variable) }) {
             body.collectReferences(variable, acc)
         }
     }
 
     override fun buildEnv(env: EvaluationEnv) {
         for ((index, p) in parameters.results.now.withIndex()) {
-            p.ifOk { name ->
+            p.ifValid { name ->
                 val v = inference.typeVars[index]
                 val type = inference.context.unificator.substituteNow(v)
                 env.put(name, Parameter(type))
@@ -57,7 +58,7 @@ class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEdit
     }
 
     override fun lookup(name: String): ExprEditor<Expr>? =
-        if (parameters.results.now.any { it == ok(name) }) null else super.lookup(name)
+        if (parameters.results.now.any { it == valid(name) }) null else super.lookup(name)
 
     override fun substitute(env: Map<String, ExprEditor<Expr>>): ExprEditor<*> {
         val bound = parameters.results.now.mapNotNull { it.orNull() }

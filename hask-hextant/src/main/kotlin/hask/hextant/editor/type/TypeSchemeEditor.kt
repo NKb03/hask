@@ -6,8 +6,12 @@ package hask.hextant.editor.type
 
 import hask.core.type.TypeScheme
 import hask.hextant.editor.IdentifierListEditor
-import hextant.*
+import hextant.Context
+import hextant.EditorView
 import hextant.base.AbstractEditor
+import hextant.core.editor.composeResult
+import validated.reaktive.ReactiveValidated
+import validated.reaktive.composeReactive
 
 class TypeSchemeEditor(
     context: Context,
@@ -16,6 +20,5 @@ class TypeSchemeEditor(
 ) : AbstractEditor<TypeScheme, EditorView>(context) {
     val body = TypeExpander(context, type)
 
-    override val result: EditorResult<TypeScheme> =
-        result2(parameters, body) { params, type -> ok(TypeScheme(params, type)) }
+    override val result: ReactiveValidated<TypeScheme> = composeResult(parameters, body)
 }

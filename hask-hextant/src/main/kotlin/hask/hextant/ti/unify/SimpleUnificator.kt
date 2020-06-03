@@ -35,8 +35,7 @@ class SimpleUnificator(private val parent: SimpleUnificator? = null) : Unificato
         val t2 = subst(b)
         constraints.add(c)
         when {
-            t1 == t2                                       -> {
-            }
+            t1 == t2 || t1 == Wildcard || t2 == Wildcard   -> { }
             t1 is Var && t1.name !in t2.fvs()              -> bind(t1.name, t2)
             t2 is Var && t2.name !in t1.fvs()              -> bind(t2.name, t1)
             t1 is Func && t2 is Func                       -> {
@@ -95,7 +94,7 @@ class SimpleUnificator(private val parent: SimpleUnificator? = null) : Unificato
         subst.mapValues { (_, s) -> s.now }.filter { (n, s) -> s != Var(n) }
 
     override fun substitute(type: Type): ReactiveValue<Type> = when (type) {
-        INT                 -> reactiveValue(INT)
+        INT, Wildcard       -> reactiveValue(type)
         is Var              -> subst(type.name)
         is Func             -> binding(substitute(type.from), substitute(type.to)) { a, b -> Func(a, b) }
         is ParameterizedADT -> {

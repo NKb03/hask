@@ -12,10 +12,14 @@ import hask.hextant.eval.EvaluationEnv.Resolution
 import hask.hextant.ti.DependencyGraph
 import hask.hextant.ti.LetTypeInference
 import hask.hextant.ti.env.TIContext
-import hextant.*
+import hextant.Context
 import hextant.base.CompoundEditor
+import hextant.core.editor.composeResult
 import reaktive.set.asSet
 import reaktive.value.now
+import validated.*
+import validated.reaktive.ReactiveValidated
+import validated.reaktive.composeReactive
 
 class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let> {
     val bindings by child(BindingListEditor(context))
@@ -25,12 +29,9 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
         bindings.ensureNotEmpty()
     }
 
-    override val result: EditorResult<Let> = result2(bindings, body) { bs, b ->
-        ok(Let(bs, b))
-    }
-
+    override val result: ReactiveValidated<Let> = composeResult(bindings, body)
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {
-        if (bindings.editors.now.none { it.name.result.now == ok(variable) }) {
+        if (bindings.editors.now.none { it.name.result.now == valid(variable) }) {
             for (b in bindings.editors.now) {
                 b.value.collectReferences(variable, acc)
                 body.collectReferences(variable, acc)
@@ -55,7 +56,7 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
 
     override fun buildEnv(env: EvaluationEnv) {
         for (b in bindings.editors.now) {
-            b.name.result.now.ifOk { name -> env.put(name, Resolution.Resolved(b.value)) }
+            b.name.result.now.ifValid { name -> env.put(name, Resolution.Resolved(b.value)) }
         }
     }
 
@@ -70,5 +71,5 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
     override fun canEvalOneStep(): Boolean = !dependencyGraph.hasCycle(body.freeVariables.now)
 
     override fun lookup(name: String): ExprEditor<Expr>? =
-        bindings.editors.now.find { it.name.result.now == ok(name) }?.value ?: super.lookup(name)
+        bindings.editors.now.find { it.name.result.now == valid(name) }?.value ?: super.lookup(name)
 }

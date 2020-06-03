@@ -9,10 +9,14 @@ import hask.core.ast.Expr.Apply
 import hask.hextant.context.HaskInternal
 import hask.hextant.ti.ApplyTypeInference
 import hask.hextant.ti.env.TIContext
-import hextant.*
+import hextant.Context
 import hextant.base.CompoundEditor
+import hextant.core.editor.composeResult
 import reaktive.set.asSet
 import reaktive.value.now
+import validated.isValid
+import validated.reaktive.ReactiveValidated
+import validated.reaktive.composeReactive
 
 class ApplyEditor private constructor(
     context: Context,
@@ -33,7 +37,7 @@ class ApplyEditor private constructor(
         if (right != null) arguments.editors.now[0].setEditor(right)
     }
 
-    override val result: EditorResult<Apply> = result2(applied, arguments) { l, r -> ok(Apply(l, r)) }
+    override val result: ReactiveValidated<Apply> = composeResult(applied, arguments)
 
     override val freeVariables = applied.freeVariables + arguments.editors.asSet().flatMap { it.freeVariables }
 
@@ -58,6 +62,6 @@ class ApplyEditor private constructor(
 
     override fun canEvalOneStep(): Boolean {
         val applied = applied.editor.now as? LambdaEditor ?: return false
-        return applied.parameters.result.now.isOk && applied.body.isExpanded
+        return applied.parameters.result.now.isValid && applied.body.isExpanded
     }
 }

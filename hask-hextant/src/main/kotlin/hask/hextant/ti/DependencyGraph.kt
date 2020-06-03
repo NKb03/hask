@@ -5,7 +5,6 @@
 package hask.hextant.ti
 
 import hask.core.*
-import hextant.*
 import kollektion.Cache
 import reaktive.event.unitEvent
 import reaktive.list.ReactiveList
@@ -15,8 +14,11 @@ import reaktive.set.asSet
 import reaktive.set.binding.values
 import reaktive.value.binding.map
 import reaktive.value.now
+import validated.ifValid
+import validated.orNull
+import validated.reaktive.ReactiveValidated
 
-class DependencyGraph(private val input: ReactiveList<Pair<EditorResult<String>, ReactiveSet<String>>>) {
+class DependencyGraph(private val input: ReactiveList<Pair<ReactiveValidated<String>, ReactiveSet<String>>>) {
     private val invalidate = unitEvent()
     val invalidated = invalidate.stream
 
@@ -45,7 +47,7 @@ class DependencyGraph(private val input: ReactiveList<Pair<EditorResult<String>,
         val index = vertices.get()
         val adj = List(input.now.size) { mutableListOf<Int>() }
         for (b in input.now) {
-            b.first.now.ifOk { name ->
+            b.first.now.ifValid { name ->
                 for (fv in b.second.now) {
                     val u = index[fv]
                     val v = index.getValue(name)
@@ -59,7 +61,7 @@ class DependencyGraph(private val input: ReactiveList<Pair<EditorResult<String>,
     private fun computeVertices(): Map<String, Int> {
         val index = mutableMapOf<String, Int>()
         for ((i, b) in input.now.withIndex()) {
-            b.first.now.ifOk { name -> index[name] = i }
+            b.first.now.ifValid { name -> index[name] = i }
         }
         return index
     }

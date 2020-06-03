@@ -7,7 +7,8 @@ package hask.hextant.view
 import bundles.Bundle
 import hask.hextant.editor.IdentifierEditor
 import hextant.core.view.AbstractTokenEditorControl
-import hextant.fx.*
+import hextant.fx.registerShortcuts
+import hextant.fx.shortcut
 import javafx.css.PseudoClass
 import javafx.scene.input.KeyCode.ENTER
 import javafx.scene.input.KeyCode.F2

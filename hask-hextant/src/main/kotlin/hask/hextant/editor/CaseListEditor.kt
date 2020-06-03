@@ -4,6 +4,7 @@
 
 package hask.hextant.editor
 
+
 import hask.core.ast.Expr
 import hask.core.ast.Pattern
 import hextant.Context

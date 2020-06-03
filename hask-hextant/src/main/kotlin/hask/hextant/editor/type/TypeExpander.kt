@@ -5,8 +5,9 @@
 package hask.hextant.editor.type
 
 import hask.core.type.*
+import hask.core.type.Type.Func
+import hask.core.type.Type.ParameterizedADT
 import hask.hextant.editor.IdentifierEditor
-import hask.core.type.Type.*
 import hextant.Context
 import hextant.core.editor.Expander
 
