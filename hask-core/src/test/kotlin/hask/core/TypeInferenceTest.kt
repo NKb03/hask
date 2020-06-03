@@ -55,10 +55,10 @@ class TypeInferenceTest {
         val expected = TypeScheme(
             listOf("a", "b"),
             Func(
-                ParameterizedADT(list, listOf(Var("a"))),
+                ParameterizedADT("List", listOf(Var("a"))),
                 Func(
                     Func(Var("a"), Var("b")),
-                    ParameterizedADT(list, listOf(Var("b")))
+                    ParameterizedADT("List", listOf(Var("b")))
                 )
             )
         )

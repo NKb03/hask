@@ -17,10 +17,7 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
 
-class TIEnv(
-    private val parent: TIEnv?,
-    private val namer: ReleasableNamer
-) {
+class TIEnv(private val parent: TIEnv?, private val namer: ReleasableNamer) {
     constructor(namer: ReleasableNamer) : this(root(namer), namer)
 
     private val declaredBindings = mutableMapOf<String, TypeScheme>()
@@ -42,6 +39,7 @@ class TIEnv(
         declaredBindings[name] = type
         myFVS.addAll(type.fvs())
         getQueries(name).forEach { it.set(type.instantiate(namer)) }
+        isResolvedQueries[name]?.set(true)
     }
 
     fun bind(name: String, type: Type) {
@@ -53,7 +51,10 @@ class TIEnv(
         val type = declaredBindings.remove(name)!!
         myFVS.removeAll(type.fvs())
         getQueries(name).forEach { it.set(null) }
+        isResolvedQueries[name]?.set(false)
     }
+
+    fun declaredType(name: String): TypeScheme? = declaredBindings[name]
 
     fun resolve(name: String): ReactiveValue<Type?> {
         val queries = queries.getOrPut(name) { mutableListOf() }

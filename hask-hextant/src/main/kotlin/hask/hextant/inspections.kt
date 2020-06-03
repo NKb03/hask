@@ -5,8 +5,11 @@
 package hask.hextant
 
 import hask.core.ast.Expr.Lambda
+import hask.core.type.Type.Var
 import hask.hextant.context.HaskInternal
 import hask.hextant.editor.*
+import hask.hextant.editor.type.SimpleTypeEditor
+import hask.hextant.ti.env.ADTDefinitionEnv
 import hask.hextant.ti.env.TIContext
 import hextant.inspect.inspection
 import reaktive.collection.binding.isEmpty
@@ -25,7 +28,7 @@ fun unresolvedVariableInspection(inspected: ValueOfEditor) = inspection(inspecte
             onInvalid = { reactiveValue(true) }
         )
     })
-    message { "${inspected.result.now}" }
+    message { "${inspected.result.now.force()} cannot be resolved" }
 }
 
 fun typeConstraintInspection(inspected: ExprEditor<*>) = inspection(inspected) {
@@ -46,4 +49,17 @@ fun betaConversion(inspected: ApplyEditor) = inspection(inspected) {
         it.map { a -> a is Lambda }.ifInvalid { false }
     } and inspected.arguments.result.map { it.isValid })
     addFix("Replace all usages of abstracted variable by argument", eval, inspected.expander!!)
+}
+
+fun typeParameterUnresolvedInspection(inspected: SimpleTypeEditor) = inspection(inspected) {
+    description = "Reports unresolved type parameters"
+    isSevere(true)
+    val env = inspected.context[ADTDefinitionEnv]
+    checkingThat(inspected.result.flatMap { v ->
+        v.fold(
+            onValid = { t -> if (t is Var) env.isResolved(t.name) else reactiveValue(true) },
+            onInvalid = { reactiveValue(true) }
+        )
+    })
+    message { "${inspected.result.now.force()} cannot be resolved" }
 }

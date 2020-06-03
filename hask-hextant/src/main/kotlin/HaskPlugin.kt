@@ -299,6 +299,8 @@ object HaskPlugin : PluginInitializer({
             }
         }
     }
+    inspection(::unresolvedVariableInspection)
+    inspection(::typeParameterUnresolvedInspection)
     inspection(::typeConstraintInspection)
     inspection(::betaConversion)
     stylesheet("hextant/hask/style.css")

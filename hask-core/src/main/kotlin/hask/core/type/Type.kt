@@ -1,7 +1,5 @@
 package hask.core.type
 
-import hask.core.ast.ADT
-
 sealed class Type {
     object INT : Type() {
         override fun toString(): String = "int"
