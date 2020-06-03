@@ -10,7 +10,6 @@ import hextant.Context
 import hextant.base.CompoundEditor
 import hextant.core.editor.composeResult
 import validated.reaktive.ReactiveValidated
-import validated.reaktive.composeReactive
 
 class CaseEditor(context: Context) : CompoundEditor<Pair<Pattern, Expr>>(context) {
     val pattern by child(PatternExpander(context))

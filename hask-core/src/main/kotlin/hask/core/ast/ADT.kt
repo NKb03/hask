@@ -16,7 +16,7 @@ data class ADT(val name: String, val typeParameters: List<String>) {
     }
 }
 
-data class ADTConstructor(val adt: ADT, val name: String, val parameters: List<Type>) {
+data class ADTConstructor(val name: String, val parameters: List<Type>) {
     override fun toString(): String = buildString {
         append(name)
         for (p in parameters) {
@@ -37,7 +37,7 @@ data class ADTDef(val adt: ADT, val constructors: List<ADTConstructor>) {
 }
 
 fun constructorFunc(adt: ADT, constructor: ADTConstructor): Builtin {
-    val retType: Type = ParameterizedADT(adt, adt.typeParameters.map { Var(it) })
+    val retType: Type = ParameterizedADT(adt.name, adt.typeParameters.map { Var(it) })
     val type = constructor.parameters.foldRight(retType) { param, ret -> Func(param, ret) }
     return Builtin(constructor.name, type)
 }

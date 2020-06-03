@@ -4,15 +4,15 @@
 
 package hask.hextant.editor
 
-import hask.core.ast.Expr.Binding
+import hask.core.ast.ADT
 import hextant.Context
 import hextant.base.CompoundEditor
 import hextant.core.editor.composeResult
 import validated.reaktive.ReactiveValidated
 
-class BindingEditor(context: Context) : CompoundEditor<Binding>(context) {
+class ADTEditor(context: Context) : CompoundEditor<ADT>(context) {
     val name by child(IdentifierEditor(context))
-    val value by child(ExprExpander(context))
+    val parameters by child(IdentifierListEditor(context))
 
-    override val result: ReactiveValidated<Binding> = composeResult(name, value)
+    override val result: ReactiveValidated<ADT> = composeResult(name, parameters)
 }

@@ -4,10 +4,10 @@
 
 package hask.hextant.ti.env
 
+import hask.core.ast.Builtin.Companion.BooleanT
 import hask.core.type.Type
 import hask.core.type.Type.*
 import hask.core.type.TypeScheme
-import hask.hextant.ti.Builtins.BoolT
 import kollektion.Counter
 import reaktive.asValue
 import reaktive.set.*
@@ -103,9 +103,9 @@ class TIEnv(
             bind("sub", Func(INT, Func(INT, INT)))
             bind("mul", Func(INT, Func(INT, INT)))
             bind("div", Func(INT, Func(INT, INT)))
-            bind("eq", TypeScheme(listOf("a"), Func(Var("a"), Func(Var("a"), BoolT))))
-            bind("True", BoolT)
-            bind("False", BoolT)
+            bind("eq", TypeScheme(listOf("a"), Func(Var("a"), Func(Var("a"), BooleanT))))
+            bind("True", BooleanT)
+            bind("False", BooleanT)
         }
     }
 }

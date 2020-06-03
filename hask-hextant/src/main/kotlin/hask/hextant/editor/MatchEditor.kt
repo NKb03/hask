@@ -11,7 +11,6 @@ import hextant.base.CompoundEditor
 import hextant.core.editor.composeResult
 import reaktive.set.ReactiveSet
 import validated.reaktive.ReactiveValidated
-import validated.reaktive.composeReactive
 
 class MatchEditor(context: Context, val matched: ExprExpander) : CompoundEditor<Match>(context), ExprEditor<Match> {
     constructor(context: Context) : this(context, ExprExpander(context))

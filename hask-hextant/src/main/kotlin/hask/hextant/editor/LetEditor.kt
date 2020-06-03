@@ -19,7 +19,6 @@ import reaktive.set.asSet
 import reaktive.value.now
 import validated.*
 import validated.reaktive.ReactiveValidated
-import validated.reaktive.composeReactive
 
 class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let> {
     val bindings by child(BindingListEditor(context))

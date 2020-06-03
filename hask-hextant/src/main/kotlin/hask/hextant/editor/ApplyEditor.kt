@@ -16,7 +16,6 @@ import reaktive.set.asSet
 import reaktive.value.now
 import validated.isValid
 import validated.reaktive.ReactiveValidated
-import validated.reaktive.composeReactive
 
 class ApplyEditor private constructor(
     context: Context,

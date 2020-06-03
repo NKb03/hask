@@ -7,7 +7,7 @@ package hask.core.ast
 import hask.core.type.*
 
 sealed class Pattern {
-    abstract fun inferExpectedType(namer: Namer): Type
+    abstract fun inferExpectedType(namer: Namer, constructorADTMap: Map<ADTConstructor, ADT>): Type
 
     abstract fun defineVars(namer: Namer): Env
 
@@ -16,7 +16,10 @@ sealed class Pattern {
     data class Integer(val value: Int) : Pattern() {
         override fun defineVars(namer: Namer): Env = emptyMap()
 
-        override fun inferExpectedType(namer: Namer): Type = Type.INT
+        override fun inferExpectedType(
+            namer: Namer,
+            constructorADTMap: Map<ADTConstructor, ADT>
+        ): Type = Type.INT
 
         override fun toString(): String = value.toString()
     }
@@ -24,10 +27,10 @@ sealed class Pattern {
     data class Constructor(val constructor: ADTConstructor, val names: List<String>) : Pattern() {
         private var typeArgs: MutableMap<String, Type> = mutableMapOf()
 
-        override fun inferExpectedType(namer: Namer): Type {
-            val typeParameters = constructor.adt.typeParameters
-            val typeArguments = typeParameters.map { typeArgs.getOrPut(it) { Type.Var(namer.freshName()) } }
-            return Type.ParameterizedADT(constructor.adt, typeArguments)
+        override fun inferExpectedType(namer: Namer, constructorADTMap: Map<ADTConstructor, ADT>): Type {
+            val adt = constructorADTMap[constructor] ?: error("No adt found for constructor $constructor")
+            val typeArguments = adt.typeParameters.map { typeArgs.getOrPut(it) { Type.Var(namer.freshName()) } }
+            return Type.ParameterizedADT(adt.name, typeArguments)
         }
 
         override fun defineVars(namer: Namer): Env = names.withIndex().associate { (idx, name) ->
@@ -45,8 +48,11 @@ sealed class Pattern {
         }
     }
 
-    object Otherwise: Pattern() {
-        override fun inferExpectedType(namer: Namer): Type = Type.Var(namer.freshName())
+    object Otherwise : Pattern() {
+        override fun inferExpectedType(
+            namer: Namer,
+            constructorADTMap: Map<ADTConstructor, ADT>
+        ): Type = Type.Var(namer.freshName())
 
         override fun defineVars(namer: Namer): Env = emptyMap()
 
