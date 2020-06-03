@@ -4,23 +4,34 @@
 
 package hask.hextant.editor.type
 
-import hask.core.type.*
-import hask.core.type.Type.Func
-import hask.core.type.Type.ParameterizedADT
+import hask.core.type.Type
+import hask.hextant.editor.IdentifierEditor
+import hask.hextant.ti.env.ADTDefinitions
 import hextant.Context
-import hextant.core.editor.Expander
+import hextant.core.editor.ConfiguredExpander
+import hextant.core.editor.ExpanderConfig
 
-class TypeExpander(context: Context, editor: TypeEditor? = null) :
-    TypeEditor, Expander<Type, TypeEditor>(context, editor) {
-    override fun expand(text: String): TypeEditor? = when (text) {
-        "->", "function" -> FuncTypeEditor(context)
-        "adt"            -> ParameterizedADTEditor(context)
-        else             -> parseType(text).orNull()?.let { editorForType(it) }
-    }
-
-    private fun editorForType(type: Type): TypeEditor? = when (type) {
-        is Func             -> FuncTypeEditor(context, editorForType(type.from), editorForType(type.to))
-        is ParameterizedADT -> null
-        else                -> SimpleTypeEditor(context, type.toString())
+class TypeExpander(
+    context: Context,
+    editor: TypeEditor? = null
+) : TypeEditor, ConfiguredExpander<Type, TypeEditor>(config, context, editor) {
+    companion object {
+        val config = ExpanderConfig<TypeEditor>().apply {
+            registerConstant("->") { FuncTypeEditor(it) }
+            registerConstant("function") { FuncTypeEditor(it) }
+            registerConstant("adt") { ParameterizedADTEditor(it) }
+            registerConstant("int") { SimpleTypeEditor(it, "int") }
+            registerInterceptor { text, context ->
+                val adts = context[ADTDefinitions].abstractDataTypes.now
+                val adt = adts.find { it.name == text } ?: return@registerInterceptor null
+                ParameterizedADTEditor(context).apply {
+                    name.setText(adt.name)
+                    typeArguments.resize(adt.typeParameters.size)
+                }
+            }
+            registerInterceptor { text, context ->
+                if (IdentifierEditor.IDENTIFIER_REGEX.matches(text)) SimpleTypeEditor(context, text) else null
+            }
+        }
     }
 }

@@ -7,14 +7,15 @@ import hask.hextant.view.IdentifierEditorControl
 import hask.hextant.view.ValueOfEditorControl
 import hextant.*
 import hextant.command.Command.Type.SingleReceiver
-import hextant.completion.NoCompleter
+import hextant.completion.*
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation.Horizontal
 import hextant.core.view.ListEditorControl.Orientation.Vertical
 import hextant.core.view.ListEditorControl.SeparatorCell
-import hextant.fx.*
+import hextant.fx.registerShortcuts
+import hextant.fx.view
 import hextant.plugin.dsl.PluginInitializer
 import javafx.scene.text.Text
 import org.controlsfx.control.PopOver
@@ -34,7 +35,7 @@ object HaskPlugin : PluginInitializer({
 
     view(::IdentifierEditorControl)
     view { e: IntLiteralEditor, bundle ->
-        FXTokenEditorView(e, bundle, NoCompleter).apply {
+        FXTokenEditorView(e, bundle).apply {
             root.styleClass.add("int-literal")
         }
     }
@@ -84,7 +85,10 @@ object HaskPlugin : PluginInitializer({
         ListEditorControl.withAltText(e, "Add binding", args)
     }
     view { e: ExprExpander, bundle ->
-        FXExpanderView(e, bundle, ExprCompleter).apply {
+        val completer = CompoundCompleter<Context, Any?>()
+        completer.addCompleter(ReferenceCompleter)
+        completer.addCompleter(KeywordExprCompleter)
+        FXExpanderView(e, bundle, completer).apply {
             registerShortcuts {
                 on("Ctrl+SPACE") { e.wrapInApply() }
                 on("Ctrl+Shift+V") { e.wrapInLet() }
@@ -166,6 +170,13 @@ object HaskPlugin : PluginInitializer({
         }
         styleClass.add("if")
     }
+    view { e: TypeExpander, bundle ->
+        val completer = CompoundCompleter<Context, Any>()
+        completer.addCompleter(SimpleTypeCompleter)
+        completer.addCompleter(ParameterizedADTCompleter)
+        completer.addCompleter(TypeExpander.config.completer(CompletionStrategy.simple))
+        FXExpanderView(e, bundle, completer)
+    }
     view { e: SimpleTypeEditor, bundle -> EditorControlWrapper(e, e.context.createView(e.name), bundle) }
     compoundView { e: FuncTypeEditor ->
         line {
@@ -225,7 +236,9 @@ object HaskPlugin : PluginInitializer({
     }
     compoundView { e: ParameterizedADTEditor ->
         line {
-            view(e.name).root.styleClass.add("parameterized-adt-name")
+            view(e.name) {
+                set(AbstractTokenEditorControl.COMPLETER, ParameterizedADTCompleter)
+            }.root.styleClass.add("parameterized-adt-name")
             keyword(" of ")
             view(e.typeArguments) { set(ORIENTATION, Horizontal) }
         }

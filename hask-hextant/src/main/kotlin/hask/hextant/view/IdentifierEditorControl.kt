@@ -14,8 +14,8 @@ import javafx.scene.input.KeyCode.ENTER
 import javafx.scene.input.KeyCode.F2
 import reaktive.value.forEach
 
-class IdentifierEditorControl(editor: IdentifierEditor, args: Bundle)
-    : AbstractTokenEditorControl(editor, args), IdentifierEditorView {
+class IdentifierEditorControl(editor: IdentifierEditor, args: Bundle) : AbstractTokenEditorControl(editor, args),
+                                                                        IdentifierEditorView {
     private val highlighter = isSelected.forEach { selected ->
         if (selected) editor.highlightReferences()
         else editor.stopHighlightingReferences()
