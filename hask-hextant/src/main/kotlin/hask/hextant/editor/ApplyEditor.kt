@@ -4,16 +4,20 @@
 
 package hask.hextant.editor
 
+import hask.core.ast.Builtin
 import hask.core.ast.Expr
 import hask.core.ast.Expr.Apply
+import hask.core.rt.isNormalForm
 import hask.hextant.context.HaskInternal
 import hask.hextant.ti.ApplyTypeInference
 import hask.hextant.ti.env.TIContext
 import hextant.Context
 import hextant.base.CompoundEditor
 import hextant.core.editor.composeResult
+import hextant.inspect.Inspections
 import reaktive.set.asSet
 import reaktive.value.now
+import validated.force
 import validated.isValid
 import validated.reaktive.ReactiveValidated
 
@@ -59,8 +63,11 @@ class ApplyEditor private constructor(
         return this
     }
 
-    override fun canEvalOneStep(): Boolean {
-        val applied = applied.editor.now as? LambdaEditor ?: return false
-        return applied.parameters.result.now.isValid && applied.body.isExpanded
+    override fun canEvalOneStep(): Boolean = when (val applied = applied.editor.now) {
+        is LambdaEditor  -> applied.parameters.result.now.isValid && applied.body.isExpanded
+        is ValueOfEditor -> applied.text.now in Builtin.prelude
+                && arguments.result.now.force().all { it.isNormalForm() }
+                && context[Inspections].getProblems(this).isEmpty()
+        else             -> false
     }
 }

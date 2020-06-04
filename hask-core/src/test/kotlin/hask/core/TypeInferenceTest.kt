@@ -5,10 +5,10 @@
 package hask.core
 
 import hask.core.ast.*
+import hask.core.ast.Builtin.Companion.adtDefinitions
 import hask.core.ast.Expr.If
+import hask.core.type.*
 import hask.core.type.Type.*
-import hask.core.type.TypeScheme
-import hask.core.type.inferType
 import org.junit.Test
 
 class TypeInferenceTest {
@@ -50,7 +50,6 @@ class TypeInferenceTest {
             ),
             body = "map".v
         )
-        val type = inferType(expr)
         val list = ADT("List", listOf("a"))
         val expected = TypeScheme(
             listOf("a", "b"),
@@ -62,6 +61,8 @@ class TypeInferenceTest {
                 )
             )
         )
+        val env = TopLevelEnv(adtDefinitions)
+        val type = inferType(expr, env)
         type shouldMatch expected
     }
 

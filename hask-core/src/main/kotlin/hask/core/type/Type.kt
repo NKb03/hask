@@ -1,7 +1,5 @@
 package hask.core.type
 
-import org.omg.CORBA.DynAnyPackage.Invalid
-
 sealed class Type {
     object INT : Type() {
         override fun toString(): String = "int"
@@ -62,4 +60,6 @@ sealed class Type {
         val parameters = fvs(env).toList()
         return TypeScheme(parameters, this)
     }
+
+    fun toTypeScheme() = TypeScheme(emptyList(), this)
 }

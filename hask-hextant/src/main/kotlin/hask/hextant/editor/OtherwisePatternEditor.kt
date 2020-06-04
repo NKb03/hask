@@ -13,5 +13,5 @@ import validated.reaktive.ReactiveValidated
 import validated.valid
 
 class OtherwisePatternEditor(context: Context) : AbstractEditor<Pattern, EditorView>(context) {
-    override val result: ReactiveValidated<Pattern> = reactiveValue(valid(Pattern.Otherwise))
+    override val result: ReactiveValidated<Pattern> = reactiveValue(valid(Pattern.Wildcard))
 }

@@ -6,6 +6,7 @@ package hask.core.type
 
 import hask.core.ast.*
 import hask.core.ast.Expr.*
+import hask.core.ast.Pattern.*
 import hask.core.condense
 import hask.core.topologicalSort
 import hask.core.type.Type.*
@@ -13,27 +14,26 @@ import java.util.*
 
 fun Expr.freeVariables(env: Set<String>, collect: MutableSet<String> = mutableSetOf()): Set<String> {
     when (this) {
-        is IntLiteral      -> {
+        is IntLiteral   -> {
         }
-        is ValueOf         -> if (name !in env) collect.add(name)
-        is Lambda          -> body.freeVariables(env + parameters, collect)
-        is Apply           -> {
+        is ValueOf      -> if (name !in env) collect.add(name)
+        is Lambda       -> body.freeVariables(env + parameters, collect)
+        is Apply        -> {
             function.freeVariables(env, collect)
             arguments.flatMap { arg -> arg.freeVariables(env, collect) }
         }
-        is Let             -> {
+        is Let          -> {
             val env1 = env + bindings.mapTo(mutableSetOf<String>()) { it.name }
             bindings.forEach { (_, v) -> v.freeVariables(env1, collect) }
             body.freeVariables(env1, collect)
         }
-        is If              -> {
+        is If           -> {
             cond.freeVariables(env, collect)
             then.freeVariables(env, collect)
             otherwise.freeVariables(env, collect)
         }
-        is ConstructorCall -> arguments.forEach { it.freeVariables(env, collect) }
-        is Match           -> arms.entries.flatMap { (p, e) -> e.freeVariables(env + p.boundVariables(), collect) }
-        is ApplyBuiltin    -> arguments.forEach { it.freeVariables(env, collect) }
+        is Match        -> arms.entries.flatMap { (p, e) -> e.freeVariables(env + p.boundVariables(), collect) }
+        is ApplyBuiltin -> arguments.forEach { it.freeVariables(env, collect) }
     }
     return collect
 }
@@ -42,24 +42,24 @@ fun Expr.inferType(
     env: Env,
     namer: Namer,
     constraints: MutableList<Constraint>,
-    constructorADTMap: Map<ADTConstructor, ADT>
+    tl: TopLevelEnv
 ): Type = when (this) {
-    is IntLiteral      -> INT
-    is ValueOf         -> env[name]?.instantiate(namer) ?: error("Unbound identifier $name")
-    is Lambda          -> {
+    is IntLiteral   -> INT
+    is ValueOf      -> env[name]?.instantiate(namer) ?: error("Unbound identifier $name")
+    is Lambda       -> {
         val tyVars = List(parameters.size) { Var(namer.freshName()) }
         val newEnv = env + parameters.zip(tyVars.map { v -> TypeScheme(emptyList(), v) })
-        val bodyT = body.inferType(newEnv, namer, constraints, constructorADTMap)
+        val bodyT = body.inferType(newEnv, namer, constraints, tl)
         functionType(tyVars, bodyT)
     }
-    is Apply           -> {
-        val f = function.inferType(env, namer, constraints, constructorADTMap)
-        val args = arguments.map { it.inferType(env, namer, constraints, constructorADTMap) }
+    is Apply        -> {
+        val f = function.inferType(env, namer, constraints, tl)
+        val args = arguments.map { it.inferType(env, namer, constraints, tl) }
         val ret = Var(namer.freshName())
         constraints.bind(f, functionType(args, ret))
         ret
     }
-    is Let             -> {
+    is Let          -> {
         val graph = makeGraph(env.keys)
         val env2 = env.toMutableMap()
         for (comp in graph.condense().topologicalSort()) {
@@ -70,7 +70,7 @@ fun Expr.inferType(
             for (i in comp) {
                 val (name, value) = bindings[i]
                 val defTypeVar = typeVars.getValue(name)
-                val type = value.inferType(env1, namer, c, constructorADTMap)
+                val type = value.inferType(env1, namer, c, tl)
                 c.bind(defTypeVar, type)
                 t[name] = type
             }
@@ -80,54 +80,37 @@ fun Expr.inferType(
                 env2[name] = principal
             }
         }
-        body.inferType(env2, namer, constraints, constructorADTMap)
+        body.inferType(env2, namer, constraints, tl)
     }
-    is If              -> {
+    is If           -> {
         val ret = Var(namer.freshName())
-        val condT = cond.inferType(env, namer, constraints, constructorADTMap)
+        val condT = cond.inferType(env, namer, constraints, tl)
         constraints.bind(condT, Builtin.BooleanT)
-        val t1 = then.inferType(env, namer, constraints, constructorADTMap)
+        val t1 = then.inferType(env, namer, constraints, tl)
         constraints.bind(t1, ret)
-        val t2 = otherwise.inferType(env, namer, constraints, constructorADTMap)
+        val t2 = otherwise.inferType(env, namer, constraints, tl)
         constraints.bind(t2, ret)
         ret
     }
-    is ConstructorCall -> {
-        val typeArguments = mutableMapOf<String, Type>()
-        constructor.parameters.zip(arguments) { p, a ->
-            if (p is Var) {
-                val fresh = typeArguments.getOrPut(p.name) { Var(namer.freshName()) }
-                constraints.add(Constraint(a.inferType(env, namer, constraints, constructorADTMap), fresh))
-            } else {
-                constraints.add(Constraint(a.inferType(env, namer, constraints, constructorADTMap), p))
-            }
-        }
-        val adt = constructorADTMap[constructor] ?: error("No ADT found for constructor $constructor")
-        val positionalTypeArgs = adt.typeParameters.map {
-            typeArguments.getOrElse(it) {
-                Var(namer.freshName())
-            }
-        }
-        ParameterizedADT(adt.name, positionalTypeArgs)
-    }
-    is Match           -> {
-        val matchedType = expr.inferType(env, namer, constraints, constructorADTMap)
+    is Match        -> {
+        val matchedType = expr.inferType(env, namer, constraints, tl)
         val common = Var(namer.freshName())
         for ((pattern, body) in arms) {
-            val expectedType = pattern.inferExpectedType(namer, constructorADTMap)
-            val returnType = body.inferType(env + pattern.defineVars(namer), namer, constraints, constructorADTMap)
+            val newEnv = env.toMutableMap()
+            val expectedType = pattern.inferExpectedType(matchedType, newEnv, tl, namer)
+            val returnType = body.inferType(newEnv, namer, constraints, tl)
             constraints.add(Constraint(matchedType, expectedType))
             constraints.add(Constraint(common, returnType))
         }
         common
     }
-    is ApplyBuiltin    -> {
+    is ApplyBuiltin -> {
         parameters.zip(arguments) { p, a ->
-            constraints.add(Constraint(a.inferType(env, namer, constraints, constructorADTMap), p))
+            constraints.add(Constraint(a.inferType(env, namer, constraints, tl), p))
         }
         returnType
     }
-    is Expr.Hole       -> Type.Hole
+    is Expr.Hole    -> Type.Hole
 }
 
 fun Let.makeGraph(boundVars: Set<String>): List<MutableList<Int>> {
@@ -179,13 +162,41 @@ fun principalType(type: Type, env: Env, constraints: Constraints): TypeScheme {
     return type.apply(subst).generalize(env.keys)
 }
 
-fun inferType(expr: Expr, adtDefs: List<ADTDef> = Builtin.adtDefinitions): TypeScheme {
-    val constructorADTMap = adtDefs.flatMap { (adt, constructors) -> constructors.map { it to adt } }.toMap()
-    val env = Builtin.env
+fun inferType(expr: Expr, tl: TopLevelEnv = TopLevelEnv(emptyList())): TypeScheme {
+    val env = Builtin.env + tl.env
     val namer = SimpleNamer()
     val constraints = LinkedList<Constraint>()
-    val general = expr.inferType(env, namer, constraints, constructorADTMap)
+    val general = expr.inferType(env, namer, constraints, tl)
     val subst = unify(constraints)
     val specialized = general.apply(subst)
     return specialized.generalize(env.keys)
+}
+
+fun Pattern.boundVariables(): Set<String> = when (this) {
+    Wildcard, is Integer -> emptySet()
+    is Variable          -> setOf(name)
+    is Destructuring     -> components.flatMapTo(mutableSetOf()) { it.boundVariables() }
+}
+
+fun Pattern.inferExpectedType(
+    subject: Type,
+    env: MutableMap<String, TypeScheme>,
+    tl: TopLevelEnv,
+    namer: Namer
+): Type = when (this) {
+    Wildcard         -> Var(namer.freshName())
+    is Variable      -> {
+        env[name] = subject.toTypeScheme()
+        subject
+    }
+    is Integer       -> INT
+    is Destructuring -> {
+        val adt = tl.getADT(constructor)
+        val parameters = tl.getParameters(constructor)!!
+        check(components.size == parameters.size)
+        val typeArguments = parameters.zip(components).map { (parameter, pattern) ->
+            pattern.inferExpectedType(parameter, env, tl, namer)
+        }
+        ParameterizedADT(adt.name, typeArguments)
+    }
 }

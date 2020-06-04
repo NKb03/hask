@@ -42,7 +42,6 @@ fun ExprExpander.reconstruct(expr: Expr) {
             e.ifTrue.reconstruct(expr.then)
             e.ifFalse.reconstruct(expr.otherwise)
         }
-        is ConstructorCall -> throw UnsupportedOperationException()
         is Match           -> TODO()
         is ApplyBuiltin    -> throw UnsupportedOperationException()
         Hole               -> {

@@ -5,8 +5,11 @@
 package hask.core.ast
 
 import hask.core.ast.Expr.*
-import hask.core.ast.Pattern.Constructor
+import hask.core.ast.Pattern.Destructuring
+import hask.core.ast.Pattern.Variable
+import hask.core.rt.evaluate
 import hask.core.rt.invoke
+import hask.core.type.TopLevelEnv
 import hask.core.type.Type.Var
 import hask.core.type.inferType
 
@@ -20,7 +23,8 @@ private fun testBox() {
     val box = ADT("Box", listOf("a"))
     val boxC = ADTConstructor("Box", listOf(Var("a")))
     val expr = let("f" be lambda("a", "b", body = "a".v), body = "f"(1.l, 2.l))
-    println(inferType(expr, listOf(ADTDef(box, listOf(boxC)))))
+    val tl = TopLevelEnv(listOf(ADTDef(box, listOf(boxC))))
+    println(inferType(expr, tl))
 }
 
 private fun testOrDefault() {
@@ -32,15 +36,17 @@ private fun testOrDefault() {
         body = Match(
             "opt".v,
             mapOf(
-                Constructor(just, listOf("value")) to "value".v,
-                Constructor(nothing, emptyList()) to "default".v
+                Destructuring("Just", listOf(Variable("value"))) to "value".v,
+                Destructuring("Nothing", emptyList()) to "default".v
             )
         )
     )
     val expr = let(
         "orDefault" be orDefault,
-        body = "orDefault"(0.l, ConstructorCall(just, listOf(1.l)))
+        body = "orDefault"(0.l, apply("Just", 1.l))
     )
-    val type = inferType(expr, listOf(ADTDef(maybe, listOf(just, nothing))))
+    val tl = TopLevelEnv(listOf(ADTDef(maybe, listOf(just, nothing))))
+    val type = inferType(expr, tl)
     println("tpe = $type")
+    println(expr.evaluate(tl))
 }

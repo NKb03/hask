@@ -55,8 +55,8 @@ data class Builtin(val name: String, val type: Type) {
                 "x",
                 "y",
                 body = ApplyBuiltin("+", listOf(INT, INT), INT, listOf("x".v, "y".v)) { (x, y) ->
-                    val valueX = (x as IntValue).value
-                    val valueY = (y as IntValue).value
+                    val valueX = (x.force() as IntValue).value
+                    val valueY = (y.force() as IntValue).value
                     IntValue(function(valueX, valueY))
                 })
 
@@ -73,7 +73,7 @@ data class Builtin(val name: String, val type: Type) {
                 Var("a"),
                 listOf("x".v, "y".v)
             ) { (x, y) ->
-                if (x.eq(y)) ADTValue(True, emptyList())
+                if (x.force().eq(y.force())) ADTValue(True, emptyList())
                 else ADTValue(False, emptyList())
             }
         )

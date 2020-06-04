@@ -6,6 +6,7 @@ package hask.core.ast
 
 import hask.core.parse.IDENTIFIER_REGEX
 import hask.core.rt.NormalForm
+import hask.core.rt.Thunk
 import hask.core.type.Type
 
 sealed class Expr {
@@ -37,20 +38,6 @@ sealed class Expr {
         override fun toString(): String = "if $cond then $then else $otherwise"
     }
 
-    data class ConstructorCall(val constructor: ADTConstructor, val arguments: List<Expr>) : Expr() {
-        init {
-            require(constructor.parameters.size == arguments.size)
-        }
-
-        override fun toString(): String = buildString {
-            append(constructor.name)
-            for (a in arguments) {
-                append(' ')
-                append(a)
-            }
-        }
-    }
-
     data class Match(val expr: Expr, val arms: Map<Pattern, Expr>) : Expr() {
         override fun toString(): String = buildString {
             append("match ")
@@ -70,7 +57,7 @@ sealed class Expr {
         val parameters: List<Type>,
         val returnType: Type,
         val arguments: List<Expr>,
-        val function: (List<NormalForm>) -> NormalForm
+        val function: (List<Thunk>) -> NormalForm
     ) : Expr() {
         override fun toString(): String = buildString {
             append('(')
@@ -94,7 +81,6 @@ sealed class Expr {
         is Apply           -> function.containsHoles() || arguments.any { it.containsHoles() }
         is Let             -> body.containsHoles() || bindings.any { it.value.containsHoles() }
         is If              -> cond.containsHoles() || then.containsHoles() || otherwise.containsHoles()
-        is ConstructorCall -> arguments.any { it.containsHoles() }
         is Match           -> expr.containsHoles() || arms.values.any { it.containsHoles() }
         is ApplyBuiltin    -> arguments.any { it.containsHoles() }
         Hole               -> true

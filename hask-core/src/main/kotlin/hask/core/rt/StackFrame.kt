@@ -24,7 +24,6 @@ class StackFrame private constructor(
     override fun toString(): String = buildString {
         var f = this@StackFrame
         while (true) {
-            println(f.variables)
             for ((name, value) in f.variables) {
                 append("$name = $value")
             }

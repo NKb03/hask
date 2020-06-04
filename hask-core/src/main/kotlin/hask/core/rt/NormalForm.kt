@@ -43,7 +43,7 @@ sealed class NormalForm {
 
     fun toExpr(env: Set<String>): Expr = when (this) {
         is IntValue    -> value.l
-        is ADTValue    -> ConstructorCall(constructor, fields.map { it.force().toExpr(env) })
+        is ADTValue    -> Apply(ValueOf(constructor.name), fields.map { it.force().toExpr(env) })
         is Function    -> {
             val bound = env + parameters
             val fvs = body.freeVariables(bound)
