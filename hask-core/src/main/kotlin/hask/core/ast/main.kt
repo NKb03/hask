@@ -19,7 +19,7 @@ fun main() {
 private fun testBox() {
     val box = ADT("Box", listOf("a"))
     val boxC = ADTConstructor("Box", listOf(Var("a")))
-    val expr = let("f" be lambda("a", "b", body = "a".v), body = "f"(IntLiteral(1), IntLiteral(2)))
+    val expr = let("f" be lambda("a", "b", body = "a".v), body = "f"(1.l, 2.l))
     println(inferType(expr, listOf(ADTDef(box, listOf(boxC)))))
 }
 
@@ -39,7 +39,7 @@ private fun testOrDefault() {
     )
     val expr = let(
         "orDefault" be orDefault,
-        body = "orDefault"(IntLiteral(0), ConstructorCall(just, listOf(IntLiteral(1))))
+        body = "orDefault"(0.l, ConstructorCall(just, listOf(1.l)))
     )
     val type = inferType(expr, listOf(ADTDef(maybe, listOf(just, nothing))))
     println("tpe = $type")

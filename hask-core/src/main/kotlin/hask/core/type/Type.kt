@@ -1,12 +1,10 @@
 package hask.core.type
 
+import org.omg.CORBA.DynAnyPackage.Invalid
+
 sealed class Type {
     object INT : Type() {
         override fun toString(): String = "int"
-    }
-
-    object Wildcard : Type() {
-        override fun toString(): String = "_"
     }
 
     data class Var(val name: String) : Type() {
@@ -30,30 +28,34 @@ sealed class Type {
         }
     }
 
+    object Hole : Type() {
+        override fun toString(): String = "?"
+    }
+
     fun apply(subst: Map<String, Type>): Type = when (this) {
-        INT, Wildcard       -> this
-        is Var              -> subst[name] ?: this
-        is Func             -> Func(from.apply(subst), to.apply(subst))
-        is ParameterizedADT -> ParameterizedADT(adt, typeArguments.map { it.apply(subst) })
+        INT, Hole -> this
+        is Var                -> subst[name] ?: this
+        is Func               -> Func(from.apply(subst), to.apply(subst))
+        is ParameterizedADT   -> ParameterizedADT(adt, typeArguments.map { it.apply(subst) })
     }
 
     fun subst(name: String, type: Type): Type = when (this) {
-        INT, Wildcard       -> this
-        is Var              -> if (this.name == name) type else this
-        is Func             -> Func(from.subst(name, type), to.subst(name, type))
-        is ParameterizedADT -> ParameterizedADT(adt, typeArguments.map { it.subst(name, type) })
+        INT, Hole -> this
+        is Var                -> if (this.name == name) type else this
+        is Func               -> Func(from.subst(name, type), to.subst(name, type))
+        is ParameterizedADT   -> ParameterizedADT(adt, typeArguments.map { it.subst(name, type) })
     }
 
     fun fvs(env: Set<String> = emptySet()): Set<String> = when (this) {
-        INT, Wildcard       -> emptySet()
-        is Var              -> if (name in env) emptySet() else setOf(name)
-        is Func             -> from.fvs(env) + to.fvs(env)
-        is ParameterizedADT -> typeArguments.flatMapTo(mutableSetOf()) { it.fvs(env) }
+        INT, Hole -> emptySet()
+        is Var                -> if (name in env) emptySet() else setOf(name)
+        is Func               -> from.fvs(env) + to.fvs(env)
+        is ParameterizedADT   -> typeArguments.flatMapTo(mutableSetOf()) { it.fvs(env) }
     }
 
     fun isComplex(): Boolean = when (this) {
-        INT, is Var, is Wildcard     -> false
-        is Func, is ParameterizedADT -> true
+        INT, is Var, is Hole -> false
+        is Func, is ParameterizedADT     -> true
     }
 
     fun generalize(env: Set<String>): TypeScheme {

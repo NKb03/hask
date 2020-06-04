@@ -5,6 +5,7 @@
 package hask.hextant.editor
 
 import hask.core.ast.Expr
+import hask.core.parse.IDENTIFIER_REGEX
 import hask.core.rt.*
 import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
@@ -22,7 +23,7 @@ import reaktive.set.binding.flattenToSet
 import reaktive.set.emptyReactiveSet
 import reaktive.value.binding.map
 import reaktive.value.now
-import validated.ifInvalid
+import validated.*
 import java.util.*
 
 class ExprExpander(context: Context, initial: ExprEditor<*>?) :
@@ -47,6 +48,8 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
             editor.inference.dispose()
         }
     }
+
+    override fun defaultResult(): Validated<Expr> = valid(Expr.Hole)
 
     override val inference = ExpanderTypeInference(context[HaskInternal, TIContext], editor.map { it?.inference })
 
@@ -141,11 +144,11 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
             registerInterceptor { text, context ->
                 val asInt = text.toIntOrNull()
                 when {
-                    asInt != null                                   ->
+                    asInt != null                   ->
                         IntLiteralEditor(context, text)
-                    text.matches(IdentifierEditor.IDENTIFIER_REGEX) ->
+                    text.matches(IDENTIFIER_REGEX) ->
                         ValueOfEditor(context, text)
-                    else                                            -> null
+                    else                            -> null
                 }
             }
         }

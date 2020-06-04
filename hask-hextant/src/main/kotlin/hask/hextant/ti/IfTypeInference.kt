@@ -3,7 +3,7 @@ package hask.hextant.ti
 import hask.core.ast.Builtin.Companion.BooleanT
 import hask.core.type.Type
 import hask.core.type.Type.Var
-import hask.core.type.Type.Wildcard
+import hask.core.type.Type.Hole
 import hask.hextant.ti.env.TIContext
 import reaktive.value.*
 
@@ -15,7 +15,7 @@ class IfTypeInference(
 ) : AbstractTypeInference(context) {
     private val result by lazy { Var(freshName()) }
 
-    private var _type = reactiveVariable<Type>(Wildcard)
+    private var _type = reactiveVariable<Type>(Hole)
     override val type: ReactiveValue<Type> get() = _type
 
     init {

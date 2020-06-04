@@ -28,10 +28,7 @@ class ValueOfEditor(context: Context, text: String) : TokenEditor<ValueOf, Value
         result.map { r -> r.map { it.name } }
     )
 
-    override fun compile(token: String): Validated<ValueOf> = token
-        .takeIf { it.matches(IdentifierEditor.IDENTIFIER_REGEX) }
-        .validated { invalid("Invalid identifier $token") }
-        .map { ValueOf(it) }
+    override fun compile(token: String): Validated<ValueOf> = valid(ValueOf(token))
 
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {
         result.now.ifValid { if (it.name == variable) acc.add(this) }

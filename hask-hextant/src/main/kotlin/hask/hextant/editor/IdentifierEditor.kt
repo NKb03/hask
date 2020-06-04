@@ -14,8 +14,7 @@ import validated.Validated.Valid
 class IdentifierEditor(context: Context, text: String) : TokenEditor<String, IdentifierEditorView>(context, text) {
     constructor(context: Context): this(context, "")
 
-    override fun compile(token: String): Validated<String> =
-        token.takeIf { it.matches(IDENTIFIER_REGEX) }.validated { invalid("Invalid identifier $token") }
+    override fun compile(token: String): Validated<String> = valid(token)
 
     private var refactoring = false
 
@@ -61,9 +60,5 @@ class IdentifierEditor(context: Context, text: String) : TokenEditor<String, Ide
     fun stopHighlightingReferences() {
         val name = result.now.ifInvalid { return }
         withAllReferences(name) { refs -> refs.forEach { ref -> ref.setHighlighting(false) } }
-    }
-
-    companion object {
-        val IDENTIFIER_REGEX = Regex("[a-zA-Z][a-zA-Z0-9_]*")
     }
 }

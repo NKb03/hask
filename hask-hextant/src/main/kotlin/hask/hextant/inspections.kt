@@ -5,12 +5,14 @@
 package hask.hextant
 
 import hask.core.ast.Expr.Lambda
+import hask.core.parse.IDENTIFIER_REGEX
 import hask.core.type.Type.Var
 import hask.hextant.context.HaskInternal
 import hask.hextant.editor.*
 import hask.hextant.editor.type.ParameterizedADTEditor
 import hask.hextant.editor.type.SimpleTypeEditor
 import hask.hextant.ti.env.*
+import hextant.core.editor.TokenEditor
 import hextant.inspect.inspection
 import reaktive.collection.binding.isEmpty
 import reaktive.value.binding.*
@@ -62,6 +64,20 @@ fun typeParameterUnresolvedInspection(inspected: SimpleTypeEditor) = inspection(
         )
     })
     message { "${inspected.result.now.force()} cannot be resolved" }
+}
+
+fun invalidIdentifierInspection(inspected: TokenEditor<*, *>) = inspection(inspected) {
+    description = "Reports invalid identifiers"
+    isSevere(true)
+    checkingThat(inspected.text.map { it.matches(IDENTIFIER_REGEX) })
+    message { "Invalid identifier '${inspected.text.now}'" }
+}
+
+fun invalidIntLiteralInspection(inspected: IntLiteralEditor) = inspection(inspected) {
+    description = "Reports invalid integer literals"
+    isSevere(true)
+    checkingThat(inspected.text.map { it.toIntOrNull() != null })
+    message { "Invalid integer literal '${inspected.text.now}'" }
 }
 
 fun unresolvedADTInspection(inspected: ParameterizedADTEditor) = inspection(inspected) {

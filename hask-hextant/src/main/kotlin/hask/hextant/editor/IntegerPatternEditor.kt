@@ -21,5 +21,5 @@ class IntegerPatternEditor(context: Context, val value: IntLiteralEditor) :
     }
 
     override val result: ReactiveValidated<Pattern> =
-        value.result.map { it.map { lit -> Pattern.Integer(lit.num) }.or(invalidComponent()) }
+        value.result.map { it.map { lit -> Pattern.Integer(lit.num!!) }.or(invalidComponent()) }
 }

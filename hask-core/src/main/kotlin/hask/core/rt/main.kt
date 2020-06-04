@@ -74,7 +74,7 @@ private fun tryParse() {
 }
 
 private fun tryMap() {
-    val source = intArrayOf(0, 1, 2, 3, 4).map(::IntLiteral).foldRight(empty()) { x, l -> x cons l }
+    val source = intArrayOf(0, 1, 2, 3, 4).map(Int::l).foldRight(empty()) { x, l -> x cons l }
     val f = lambda("n", body = "n".v * "n".v)
     val expr = let("map" be map, body = "map"(f, source))
     println("Type of $expr = ${inferType(expr)}")

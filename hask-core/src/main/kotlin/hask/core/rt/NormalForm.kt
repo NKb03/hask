@@ -4,8 +4,7 @@
 
 package hask.core.rt
 
-import hask.core.ast.ADTConstructor
-import hask.core.ast.Expr
+import hask.core.ast.*
 import hask.core.ast.Expr.*
 import hask.core.type.freeVariables
 
@@ -43,7 +42,7 @@ sealed class NormalForm {
     }
 
     fun toExpr(env: Set<String>): Expr = when (this) {
-        is IntValue    -> IntLiteral(value)
+        is IntValue    -> value.l
         is ADTValue    -> ConstructorCall(constructor, fields.map { it.force().toExpr(env) })
         is Function    -> {
             val bound = env + parameters

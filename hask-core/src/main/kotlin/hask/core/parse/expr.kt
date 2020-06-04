@@ -4,15 +4,14 @@
 
 package hask.core.parse
 
-import hask.core.ast.Expr
+import hask.core.ast.*
 import hask.core.ast.Expr.Binding
-import hask.core.ast.apply
 
 val single: Parser<Token, Expr> = doParse {
     when (val tok = next()) {
         is Token.I  -> {
             consume()
-            success(Expr.IntLiteral(tok.value))
+            success(tok.value.l)
         }
         is Token.Id -> {
             consume()

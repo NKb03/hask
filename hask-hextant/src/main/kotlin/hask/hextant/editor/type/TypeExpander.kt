@@ -11,6 +11,7 @@ import hextant.Context
 import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.ExpanderConfig
 import reaktive.value.now
+import validated.Validated
 import validated.valid
 
 class TypeExpander(
@@ -30,6 +31,8 @@ class TypeExpander(
             }
         }
     }
+
+    override fun defaultResult(): Validated<Type> = valid(Type.Hole)
 
     companion object {
         val config = ExpanderConfig<TypeEditor>().apply {

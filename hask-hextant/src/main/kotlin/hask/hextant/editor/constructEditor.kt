@@ -15,20 +15,20 @@ private fun <E : ExprEditor<*>> ExprExpander.setEditor(editor: E, initialize: (e
 
 fun ExprExpander.reconstruct(expr: Expr) {
     when (expr) {
-        is IntLiteral -> setEditor(IntLiteralEditor(context, expr.num.toString()))
-        is ValueOf    -> setEditor(ValueOfEditor(context, expr.name))
-        is Lambda     -> setEditor(LambdaEditor(context)) { e ->
+        is IntLiteral      -> setEditor(IntLiteralEditor(context, expr.text))
+        is ValueOf         -> setEditor(ValueOfEditor(context, expr.name))
+        is Lambda          -> setEditor(LambdaEditor(context)) { e ->
             e.parameters.setEditors(expr.parameters.map { p -> IdentifierEditor(context, p) })
             e.body.reconstruct(expr.body)
         }
-        is Apply      -> setEditor(ApplyEditor(context)) { e ->
+        is Apply           -> setEditor(ApplyEditor(context)) { e ->
             e.applied.reconstruct(expr.function)
             e.arguments.resize(expr.arguments.size)
             for ((i, a) in expr.arguments.withIndex()) {
                 e.arguments.editors.now[i].reconstruct(a)
             }
         }
-        is Let        -> setEditor(LetEditor(context)) { e ->
+        is Let             -> setEditor(LetEditor(context)) { e ->
             e.bindings.resize(expr.bindings.size)
             for ((i, b) in expr.bindings.withIndex()) {
                 val be = e.bindings.editors.now[i]
@@ -37,11 +37,15 @@ fun ExprExpander.reconstruct(expr: Expr) {
             }
             e.body.reconstruct(expr.body)
         }
-        is If         -> setEditor(IfEditor(context)) { e ->
+        is If              -> setEditor(IfEditor(context)) { e ->
             e.condition.reconstruct(expr.cond)
             e.ifTrue.reconstruct(expr.then)
             e.ifFalse.reconstruct(expr.otherwise)
         }
-        else          -> TODO()
+        is ConstructorCall -> throw UnsupportedOperationException()
+        is Match           -> TODO()
+        is ApplyBuiltin    -> throw UnsupportedOperationException()
+        Hole               -> {
+        }
     }
 }

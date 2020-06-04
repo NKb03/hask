@@ -5,6 +5,7 @@
 package hask.hextant.editor
 
 import hask.core.ast.Expr.IntLiteral
+import hask.core.ast.l
 import hask.hextant.context.HaskInternal
 import hask.hextant.ti.IntLiteralTypeInference
 import hask.hextant.ti.env.TIContext
@@ -18,8 +19,7 @@ class IntLiteralEditor(context: Context, text: String) : TokenEditor<IntLiteral,
                                                          ExprEditor<IntLiteral> {
     constructor(context: Context) : this(context, "")
 
-    override fun compile(token: String): Validated<IntLiteral> =
-        token.toIntOrNull().validated { invalid("Invalid integer literal $token") }.map(::IntLiteral)
+    override fun compile(token: String): Validated<IntLiteral> = valid(IntLiteral(token))
 
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {}
 

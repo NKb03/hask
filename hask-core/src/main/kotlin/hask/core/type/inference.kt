@@ -127,6 +127,7 @@ fun Expr.inferType(
         }
         returnType
     }
+    is Expr.Hole       -> Type.Hole
 }
 
 fun Let.makeGraph(boundVars: Set<String>): List<MutableList<Int>> {
@@ -149,7 +150,7 @@ fun unify(constraints: Constraints): Subst {
     val (l, r) = constraints.first()
     val rest = constraints.drop(1)
     return when {
-        l == r                                                           -> unify(rest)
+        l == r || l is Type.Hole || r is Type.Hole                       -> unify(rest)
         l is Var                                                         -> bind(l, r, rest)
         r is Var                                                         -> bind(r, l, rest)
         l is Func && r is Func                                           -> {

@@ -4,12 +4,15 @@
 
 package hask.core.ast
 
+import hask.core.parse.IDENTIFIER_REGEX
 import hask.core.rt.NormalForm
 import hask.core.type.Type
 
 sealed class Expr {
-    data class IntLiteral(val num: Int) : Expr() {
-        override fun toString(): String = "$num"
+    data class IntLiteral(val text: String) : Expr() {
+        override fun toString(): String = text
+
+        val num get() = text.toIntOrNull()
     }
 
     data class ValueOf(val name: String) : Expr() {
@@ -78,5 +81,22 @@ sealed class Expr {
             }
             append(')')
         }
+    }
+
+    object Hole : Expr() {
+        override fun toString(): String = "?"
+    }
+
+    fun containsHoles(): Boolean = when (this) {
+        is IntLiteral      -> false
+        is ValueOf         -> false
+        is Lambda          -> body.containsHoles()
+        is Apply           -> function.containsHoles() || arguments.any { it.containsHoles() }
+        is Let             -> body.containsHoles() || bindings.any { it.value.containsHoles() }
+        is If              -> cond.containsHoles() || then.containsHoles() || otherwise.containsHoles()
+        is ConstructorCall -> arguments.any { it.containsHoles() }
+        is Match           -> expr.containsHoles() || arms.values.any { it.containsHoles() }
+        is ApplyBuiltin    -> arguments.any { it.containsHoles() }
+        Hole               -> true
     }
 }

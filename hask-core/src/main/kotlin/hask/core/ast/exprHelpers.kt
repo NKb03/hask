@@ -16,6 +16,6 @@ infix fun String.be(value: Expr) = Binding(this, value)
 
 fun let(vararg bindings: Binding, body: Expr) = Let(bindings.asList(), body)
 
-val String.v get(): Expr = ValueOf(this)
+val String.v get() = ValueOf(this)
 
-val Int.l get(): Expr = IntLiteral(this)
+val Int.l get() = IntLiteral(toString())

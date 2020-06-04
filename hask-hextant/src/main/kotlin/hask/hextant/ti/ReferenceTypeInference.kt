@@ -5,7 +5,7 @@
 package hask.hextant.ti
 
 import hask.core.type.Type
-import hask.core.type.Type.Wildcard
+import hask.core.type.Type.Hole
 import hask.hextant.ti.env.TIContext
 import reaktive.value.*
 import reaktive.value.binding.flatMap
@@ -15,11 +15,11 @@ import validated.reaktive.ReactiveValidated
 
 class ReferenceTypeInference(context: TIContext, private val name: ReactiveValidated<String>) :
     AbstractTypeInference(context) {
-    private val _type = reactiveVariable<Type>(Wildcard)
+    private val _type = reactiveVariable<Type>(Hole)
     private val binding by lazy {
         name.flatMap {
-            val n = it.ifInvalid { return@flatMap reactiveValue(Wildcard) }
-            context.env.resolve(n).map { t -> t ?: Wildcard }
+            val n = it.ifInvalid { return@flatMap reactiveValue(Hole) }
+            context.env.resolve(n).map { t -> t ?: Hole }
         }
     }
 

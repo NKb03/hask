@@ -16,6 +16,7 @@ import hextant.core.view.ListEditorControl.Orientation.Vertical
 import hextant.core.view.ListEditorControl.SeparatorCell
 import hextant.fx.registerShortcuts
 import hextant.fx.view
+import hextant.inspect.Inspection
 import hextant.plugin.dsl.PluginInitializer
 import javafx.scene.text.Text
 import org.controlsfx.control.PopOver
@@ -315,6 +316,9 @@ object HaskPlugin : PluginInitializer({
     inspection(::unresolvedVariableInspection)
     inspection(::typeParameterUnresolvedInspection)
     inspection(::unresolvedADTInspection)
+    inspection<IdentifierEditor, Inspection>(::invalidIdentifierInspection)
+    inspection<ValueOfEditor, Inspection>(::invalidIdentifierInspection)
+    inspection(::invalidIntLiteralInspection)
     inspection(::typeConstraintInspection)
     inspection(::betaConversion)
     stylesheet("hextant/hask/style.css")

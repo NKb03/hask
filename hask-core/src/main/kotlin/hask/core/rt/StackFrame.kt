@@ -55,33 +55,8 @@ class StackFrame private constructor(
     }
 
     companion object {
-        private val prelude = mutableMapOf(
-            "add" to Builtin.intOperator(Int::plus),
-            "mul" to Builtin.intOperator(Int::times),
-            "sub" to Builtin.intOperator(Int::minus),
-            "div" to Builtin.intOperator(Int::div)(),
-            "id" to lambda("x", body = "x".v),
-            "False" to Builtin.constant(
-                "False",
-                ADTValue(
-                    Builtin.False,
-                    emptyList()
-                ),
-                Builtin.BooleanT
-            ),
-            "True" to Builtin.constant(
-                "True",
-                ADTValue(
-                    Builtin.True,
-                    emptyList()
-                ),
-                Builtin.BooleanT
-            ),
-            "eq" to Builtin.equals
-        )
-
         fun root() = StackFrame(mutableMapOf(), null).apply {
-            for ((n, v) in prelude) {
+            for ((n, v) in Builtin.prelude) {
                 put(n, v.eval(this))
             }
         }

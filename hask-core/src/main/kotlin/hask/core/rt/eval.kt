@@ -13,9 +13,8 @@ import hask.core.rt.NormalForm.Function
 import hask.core.topologicalSort
 import hask.core.type.makeGraph
 
-
 fun Expr.force(frame: StackFrame = StackFrame.root()): NormalForm = when (this) {
-    is IntLiteral      -> IntValue(num)
+    is IntLiteral      -> num?.let { IntValue(it) } ?: Irreducible(this)
     is ValueOf         -> frame.getVar(name).force()
     is Lambda          -> Function(parameters, body, frame)
     is Apply           -> function.apply(arguments, frame)
@@ -50,6 +49,7 @@ fun Expr.force(frame: StackFrame = StackFrame.root()): NormalForm = when (this) 
         error("No match")
     }
     is ApplyBuiltin    -> function(arguments.map { it.force(frame) })
+    is Hole       -> Irreducible(this)
 }
 
 private fun Expr.apply(arguments: List<Expr>, frame: StackFrame): NormalForm {
@@ -72,7 +72,7 @@ fun Function.apply(arguments: List<Expr>, frame: StackFrame): NormalForm {
 }
 
 fun Expr.eval(frame: StackFrame = StackFrame.root()): Thunk = when (this) {
-    is IntLiteral      -> Thunk.strict(IntValue(num))
+    is IntLiteral      -> Thunk.strict(force(frame))
     is Lambda          -> Thunk.strict(Function(parameters, body, frame))
     is ConstructorCall -> Thunk.strict(ADTValue(constructor, arguments.map { it.eval(frame) }))
     else               -> Thunk.lazy(frame, this)
@@ -94,10 +94,11 @@ fun Expr.substitute(subst: Map<String, Expr>): Expr = when (this) {
         arms.mapValues { (p, v) -> v.substitute(subst - p.boundVariables()) }
     )
     is ApplyBuiltin    -> ApplyBuiltin(name, parameters, returnType, arguments.map { it.substitute(subst) }, function)
+    is Hole       -> this
 }
 
 fun Expr.isNormalForm() = when (this) {
-    is IntLiteral      -> true
+    is IntLiteral      -> num != null
     is Lambda          -> true
     is ConstructorCall -> true
     else               -> false
@@ -106,8 +107,14 @@ fun Expr.isNormalForm() = when (this) {
 fun Expr.evaluateOnce(env: Map<String, Expr>): Expr? = when (this) {
     is ValueOf      -> env[name] ?: ValueOf(name)
     is Apply        -> when (val f = function) {
-        is Lambda -> f.body.substitute(f.parameters.zip(arguments).toMap())
-        else      -> null
+        is Lambda  -> f.body.substitute(f.parameters.zip(arguments).toMap())
+        is ValueOf -> run {
+            if (arguments.any { !it.isNormalForm() }) return null
+            val func = Builtin.prelude[f.name] as? Lambda ?: return null
+            val builtin = func.body as? ApplyBuiltin ?: return null
+            builtin.function(arguments.map { it.force() }).toExpr(env.keys)
+        }
+        else       -> null
     }
     is Let          -> {
         val g = makeGraph(env.keys)

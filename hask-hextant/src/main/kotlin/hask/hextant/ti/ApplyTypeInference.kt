@@ -6,7 +6,7 @@ package hask.hextant.ti
 
 import hask.core.type.Type
 import hask.core.type.Type.Var
-import hask.core.type.Type.Wildcard
+import hask.core.type.Type.Hole
 import hask.core.type.functionType
 import hask.hextant.ti.env.TIContext
 import reaktive.list.ReactiveList
@@ -37,6 +37,6 @@ class ApplyTypeInference(
         _type.set(Var(ret))
     }
 
-    private var _type = reactiveVariable<Type>(Wildcard)
+    private var _type = reactiveVariable<Type>(Hole)
     override val type: ReactiveValue<Type> get() = _type
 }

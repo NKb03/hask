@@ -4,6 +4,7 @@ import hask.core.ast.Expr.ApplyBuiltin
 import hask.core.rt.NormalForm
 import hask.core.rt.NormalForm.ADTValue
 import hask.core.rt.NormalForm.IntValue
+import hask.core.rt.invoke
 import hask.core.type.Type
 import hask.core.type.Type.*
 
@@ -106,5 +107,29 @@ data class Builtin(val name: String, val type: Type) {
         val env = env(all)
 
         fun env(builtin: List<Builtin>) = builtin.associate { it.name to it.type.generalize(emptySet()) }
+
+        val prelude = mapOf(
+            "add" to intOperator(Int::plus),
+            "mul" to intOperator(Int::times),
+            "sub" to intOperator(Int::minus),
+            "div" to intOperator(Int::div)(),
+            "False" to constant(
+                "False",
+                ADTValue(
+                    False,
+                    emptyList()
+                ),
+                BooleanT
+            ),
+            "True" to constant(
+                "True",
+                ADTValue(
+                    True,
+                    emptyList()
+                ),
+                BooleanT
+            ),
+            "eq" to equals
+        )
     }
 }
