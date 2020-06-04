@@ -8,9 +8,9 @@ import hask.core.ast.Expr.Lambda
 import hask.core.type.Type.Var
 import hask.hextant.context.HaskInternal
 import hask.hextant.editor.*
+import hask.hextant.editor.type.ParameterizedADTEditor
 import hask.hextant.editor.type.SimpleTypeEditor
-import hask.hextant.ti.env.ADTDefinitionEnv
-import hask.hextant.ti.env.TIContext
+import hask.hextant.ti.env.*
 import hextant.inspect.inspection
 import reaktive.collection.binding.isEmpty
 import reaktive.value.binding.*
@@ -62,4 +62,14 @@ fun typeParameterUnresolvedInspection(inspected: SimpleTypeEditor) = inspection(
         )
     })
     message { "${inspected.result.now.force()} cannot be resolved" }
+}
+
+fun unresolvedADTInspection(inspected: ParameterizedADTEditor) = inspection(inspected) {
+    description = "Reports unresolved ADTs"
+    isSevere(true)
+    val adts = inspected.context[ADTDefinitions]
+    val name = inspected.name.result
+    location(inspected.name)
+    checkingThat(adts.isResolved(name))
+    message { "Unresolved ADT ${name.now.force()}" }
 }

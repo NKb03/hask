@@ -35,7 +35,7 @@
 }
 
 .hextant-text.identifier.parameterized-adt-name {
-    -fx-text-fill: aqua !important;
+    -fx-text-fill: aqua;
 }
 
 .hextant-text.identifier.adt-name {
