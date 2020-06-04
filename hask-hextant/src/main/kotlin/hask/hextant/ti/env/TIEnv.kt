@@ -4,10 +4,10 @@
 
 package hask.hextant.ti.env
 
+import hask.core.ast.Builtin.Companion.BooleanT
 import hask.core.type.Type
 import hask.core.type.Type.*
 import hask.core.type.TypeScheme
-import hask.hextant.ti.Builtins.BoolT
 import kollektion.Counter
 import reaktive.asValue
 import reaktive.set.*
@@ -17,10 +17,7 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
 
-class TIEnv(
-    private val parent: TIEnv?,
-    private val namer: ReleasableNamer
-) {
+class TIEnv(private val parent: TIEnv?, private val namer: ReleasableNamer) {
     constructor(namer: ReleasableNamer) : this(root(namer), namer)
 
     private val declaredBindings = mutableMapOf<String, TypeScheme>()
@@ -42,6 +39,7 @@ class TIEnv(
         declaredBindings[name] = type
         myFVS.addAll(type.fvs())
         getQueries(name).forEach { it.set(type.instantiate(namer)) }
+        isResolvedQueries[name]?.set(true)
     }
 
     fun bind(name: String, type: Type) {
@@ -53,7 +51,10 @@ class TIEnv(
         val type = declaredBindings.remove(name)!!
         myFVS.removeAll(type.fvs())
         getQueries(name).forEach { it.set(null) }
+        isResolvedQueries[name]?.set(false)
     }
+
+    fun declaredType(name: String): TypeScheme? = declaredBindings[name]
 
     fun resolve(name: String): ReactiveValue<Type?> {
         val queries = queries.getOrPut(name) { mutableListOf() }
@@ -103,9 +104,9 @@ class TIEnv(
             bind("sub", Func(INT, Func(INT, INT)))
             bind("mul", Func(INT, Func(INT, INT)))
             bind("div", Func(INT, Func(INT, INT)))
-            bind("eq", TypeScheme(listOf("a"), Func(Var("a"), Func(Var("a"), BoolT))))
-            bind("True", BoolT)
-            bind("False", BoolT)
+            bind("eq", TypeScheme(listOf("a"), Func(Var("a"), Func(Var("a"), BooleanT))))
+            bind("True", BooleanT)
+            bind("False", BooleanT)
         }
     }
 }

@@ -4,8 +4,7 @@
 
 package hask.core.type
 
-import hask.core.ast.Builtin
-import hask.core.ast.Expr
+import hask.core.ast.*
 import hask.core.ast.Expr.*
 import hask.core.condense
 import hask.core.topologicalSort
@@ -42,19 +41,20 @@ fun Expr.freeVariables(env: Set<String>, collect: MutableSet<String> = mutableSe
 fun Expr.inferType(
     env: Env,
     namer: Namer,
-    constraints: MutableList<Constraint>
+    constraints: MutableList<Constraint>,
+    constructorADTMap: Map<ADTConstructor, ADT>
 ): Type = when (this) {
     is IntLiteral      -> INT
     is ValueOf         -> env[name]?.instantiate(namer) ?: error("Unbound identifier $name")
     is Lambda          -> {
         val tyVars = List(parameters.size) { Var(namer.freshName()) }
         val newEnv = env + parameters.zip(tyVars.map { v -> TypeScheme(emptyList(), v) })
-        val bodyT = body.inferType(newEnv, namer, constraints)
+        val bodyT = body.inferType(newEnv, namer, constraints, constructorADTMap)
         functionType(tyVars, bodyT)
     }
     is Apply           -> {
-        val f = function.inferType(env, namer, constraints)
-        val args = arguments.map { it.inferType(env, namer, constraints) }
+        val f = function.inferType(env, namer, constraints, constructorADTMap)
+        val args = arguments.map { it.inferType(env, namer, constraints, constructorADTMap) }
         val ret = Var(namer.freshName())
         constraints.bind(f, functionType(args, ret))
         ret
@@ -70,7 +70,7 @@ fun Expr.inferType(
             for (i in comp) {
                 val (name, value) = bindings[i]
                 val defTypeVar = typeVars.getValue(name)
-                val type = value.inferType(env1, namer, c)
+                val type = value.inferType(env1, namer, c, constructorADTMap)
                 c.bind(defTypeVar, type)
                 t[name] = type
             }
@@ -80,15 +80,15 @@ fun Expr.inferType(
                 env2[name] = principal
             }
         }
-        body.inferType(env2, namer, constraints)
+        body.inferType(env2, namer, constraints, constructorADTMap)
     }
     is If              -> {
         val ret = Var(namer.freshName())
-        val condT = cond.inferType(env, namer, constraints)
+        val condT = cond.inferType(env, namer, constraints, constructorADTMap)
         constraints.bind(condT, Builtin.BooleanT)
-        val t1 = then.inferType(env, namer, constraints)
+        val t1 = then.inferType(env, namer, constraints, constructorADTMap)
         constraints.bind(t1, ret)
-        val t2 = otherwise.inferType(env, namer, constraints)
+        val t2 = otherwise.inferType(env, namer, constraints, constructorADTMap)
         constraints.bind(t2, ret)
         ret
     }
@@ -97,24 +97,25 @@ fun Expr.inferType(
         constructor.parameters.zip(arguments) { p, a ->
             if (p is Var) {
                 val fresh = typeArguments.getOrPut(p.name) { Var(namer.freshName()) }
-                constraints.add(Constraint(a.inferType(env, namer, constraints), fresh))
+                constraints.add(Constraint(a.inferType(env, namer, constraints, constructorADTMap), fresh))
             } else {
-                constraints.add(Constraint(a.inferType(env, namer, constraints), p))
+                constraints.add(Constraint(a.inferType(env, namer, constraints, constructorADTMap), p))
             }
         }
-        val positionalTypeArgs = constructor.adt.typeParameters.map {
+        val adt = constructorADTMap[constructor] ?: error("No ADT found for constructor $constructor")
+        val positionalTypeArgs = adt.typeParameters.map {
             typeArguments.getOrElse(it) {
                 Var(namer.freshName())
             }
         }
-        ParameterizedADT(constructor.adt, positionalTypeArgs)
+        ParameterizedADT(adt.name, positionalTypeArgs)
     }
     is Match           -> {
-        val matchedType = expr.inferType(env, namer, constraints)
+        val matchedType = expr.inferType(env, namer, constraints, constructorADTMap)
         val common = Var(namer.freshName())
         for ((pattern, body) in arms) {
-            val expectedType = pattern.inferExpectedType(namer)
-            val returnType = body.inferType(env + pattern.defineVars(namer), namer, constraints)
+            val expectedType = pattern.inferExpectedType(namer, constructorADTMap)
+            val returnType = body.inferType(env + pattern.defineVars(namer), namer, constraints, constructorADTMap)
             constraints.add(Constraint(matchedType, expectedType))
             constraints.add(Constraint(common, returnType))
         }
@@ -122,7 +123,7 @@ fun Expr.inferType(
     }
     is ApplyBuiltin    -> {
         parameters.zip(arguments) { p, a ->
-            constraints.add(Constraint(a.inferType(env, namer, constraints), p))
+            constraints.add(Constraint(a.inferType(env, namer, constraints, constructorADTMap), p))
         }
         returnType
     }
@@ -177,13 +178,12 @@ fun principalType(type: Type, env: Env, constraints: Constraints): TypeScheme {
     return type.apply(subst).generalize(env.keys)
 }
 
-fun inferType(
-    expr: Expr
-): TypeScheme {
+fun inferType(expr: Expr, adtDefs: List<ADTDef> = Builtin.adtDefinitions): TypeScheme {
+    val constructorADTMap = adtDefs.flatMap { (adt, constructors) -> constructors.map { it to adt } }.toMap()
     val env = Builtin.env
     val namer = SimpleNamer()
     val constraints = LinkedList<Constraint>()
-    val general = expr.inferType(env, namer, constraints)
+    val general = expr.inferType(env, namer, constraints, constructorADTMap)
     val subst = unify(constraints)
     val specialized = general.apply(subst)
     return specialized.generalize(env.keys)

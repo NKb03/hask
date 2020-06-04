@@ -7,7 +7,7 @@ package hask.hextant.main
 import bundles.createBundle
 import hask.core.rt.eval
 import hask.hextant.context.HaskInternal
-import hask.hextant.editor.ExprExpander
+import hask.hextant.editor.ProgramEditor
 import hask.hextant.ti.env.TIContext
 import hextant.*
 import hextant.command.line.*
@@ -29,9 +29,9 @@ class HaskEditorApplication : HextantApplication() {
     override fun createView(context: Context): Parent {
         val ti = context[HaskInternal, TIContext]
         val unificator = ti.unificator
-        val editor = ExprExpander(context)
+        val editor = ProgramEditor(context)
         editor.makeRoot()
-        editor.inference.activate()
+        editor.expr.inference.activate()
         val clContext = context.extend { set(SelectionDistributor, SelectionDistributor.newInstance()) }
         val cl = CommandLine(clContext, ContextCommandSource(context))
         val cli = CommandLineControl(cl, createBundle())
@@ -39,8 +39,8 @@ class HaskEditorApplication : HextantApplication() {
         val box = VBox(editorView, cli)
         box.registerShortcuts {
             on("Ctrl+X") {
-                val expr = editor.result.now.ifInvalid { return@on }
-                val result = expr.eval().force()
+                val program = editor.result.now.ifInvalid { return@on }
+                val result = program.expr.eval().force()
                 Alert(INFORMATION, result.toString()).show()
             }
             on("Ctrl+D") {

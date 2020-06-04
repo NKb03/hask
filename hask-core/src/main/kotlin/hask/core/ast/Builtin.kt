@@ -13,11 +13,11 @@ data class Builtin(val name: String, val type: Type) {
     companion object {
         val Boolean = ADT("Boolean", emptyList())
 
-        val True = ADTConstructor(Boolean, "True", emptyList())
+        val True = ADTConstructor("True", emptyList())
 
-        val False = ADTConstructor(Boolean, "False", emptyList())
+        val False = ADTConstructor("False", emptyList())
 
-        val BooleanT = ParameterizedADT(Boolean, emptyList())
+        val BooleanT = ParameterizedADT("Boolean", emptyList())
 
         private val INT_OPERATOR = Func(INT, Func(INT, INT))
 
@@ -33,15 +33,20 @@ data class Builtin(val name: String, val type: Type) {
 
         val listADT = ADT("List", listOf("a"))
 
-        val listT = ParameterizedADT(listADT, listOf(Var("a")))
+        val listT = ParameterizedADT("List", listOf(Var("a")))
 
-        val empty = ADTConstructor(listADT, "Empty", emptyList())
+        val empty = ADTConstructor("Empty", emptyList())
 
         val cons = ADTConstructor(
-            listADT, "Cons", listOf(
+            "Cons", listOf(
                 Var("a"),
                 listT
             )
+        )
+
+        val adtDefinitions = listOf(
+            ADTDef(Boolean, listOf(True, False)),
+            ADTDef(listADT, listOf(empty, cons))
         )
 
         fun intOperator(function: (Int, Int) -> Int) =

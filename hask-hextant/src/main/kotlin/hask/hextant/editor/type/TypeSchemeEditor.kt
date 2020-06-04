@@ -11,7 +11,6 @@ import hextant.EditorView
 import hextant.base.AbstractEditor
 import hextant.core.editor.composeResult
 import validated.reaktive.ReactiveValidated
-import validated.reaktive.composeReactive
 
 class TypeSchemeEditor(
     context: Context,

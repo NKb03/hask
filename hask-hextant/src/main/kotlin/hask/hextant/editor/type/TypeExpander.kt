@@ -4,26 +4,46 @@
 
 package hask.hextant.editor.type
 
-import hask.core.type.*
-import hask.core.type.Type.Func
-import hask.core.type.Type.ParameterizedADT
-import hask.hextant.editor.IdentifierEditor
+import hask.core.parse.IDENTIFIER_REGEX
+import hask.core.type.Type
+import hask.hextant.ti.env.ADTDefinitions
 import hextant.Context
-import hextant.core.editor.Expander
+import hextant.core.editor.ConfiguredExpander
+import hextant.core.editor.ExpanderConfig
+import reaktive.value.now
+import validated.valid
 
-class TypeExpander(context: Context, editor: TypeEditor? = null) : TypeEditor, Expander<Type, TypeEditor>(context) {
-    init {
-        if (editor != null) setEditor(editor)
+class TypeExpander(
+    context: Context,
+    editor: TypeEditor? = null
+) : TypeEditor, ConfiguredExpander<Type, TypeEditor>(config, context, editor) {
+    override fun onExpansion(editor: TypeEditor) {
+        if (editor is ParameterizedADTEditor) {
+            val adts = context[ADTDefinitions].abstractDataTypes.now
+            val adt = adts.find { editor.name.result.now == valid(it.name) } ?: return
+            if (adt.typeParameters.isNotEmpty()) {
+                editor.typeArguments.resize(adt.typeParameters.size)
+                val e = editor.typeArguments.editors.now.last()
+                views {
+                    group.getViewOf(e).focus()
+                }
+            }
+        }
     }
 
-    override fun expand(text: String): TypeEditor? = when (text) {
-        "->", "function" -> FuncTypeEditor(context)
-        else -> parseType(text).orNull()?.let { editorForType(it) }
-    }
-
-    private fun editorForType(type: Type): TypeEditor? = when (type) {
-        is Func             -> FuncTypeEditor(context, editorForType(type.from), editorForType(type.to))
-        is ParameterizedADT -> null
-        else -> SimpleTypeEditor(context, IdentifierEditor(context, type.toString()))
+    companion object {
+        val config = ExpanderConfig<TypeEditor>().apply {
+            registerConstant("->") { FuncTypeEditor(it) }
+            registerConstant("function") { FuncTypeEditor(it) }
+            registerConstant("adt") { ParameterizedADTEditor(it) }
+            registerConstant("int") { SimpleTypeEditor(it, "int") }
+            registerInterceptor { text, context ->
+                if (IDENTIFIER_REGEX.matches(text)) SimpleTypeEditor(context, text) else null
+            }
+            registerInterceptor { text, context ->
+                if (IDENTIFIER_REGEX.matches(text) && text.first().isUpperCase()) ParameterizedADTEditor(context, text)
+                else null
+            }
+        }
     }
 }

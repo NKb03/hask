@@ -29,6 +29,23 @@
     -fx-border-color: green;
 }
 
+.parameterized-adt {
+    -fx-border-width: 1;
+    -fx-border-color: lightblue;
+}
+
+.hextant-text.identifier.parameterized-adt-name {
+    -fx-text-fill: aqua;
+}
+
+.hextant-text.identifier.adt-name {
+    -fx-text-fill: aqua;
+}
+
+.hextant-text.identifier.adt-constructor-name {
+    -fx-text-fill: darkgoldenrod;
+}
+
 :highlight {
     -fx-background-color: #234309 !important;
 }

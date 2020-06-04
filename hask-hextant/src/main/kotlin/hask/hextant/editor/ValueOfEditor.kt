@@ -16,7 +16,6 @@ import reaktive.set.toSet
 import reaktive.value.binding.map
 import reaktive.value.now
 import validated.*
-import validated.reaktive.mapValidated
 
 class ValueOfEditor(context: Context, text: String) : TokenEditor<ValueOf, ValueOfEditorView>(context, text),
                                                       ExprEditor<ValueOf> {
@@ -24,7 +23,10 @@ class ValueOfEditor(context: Context, text: String) : TokenEditor<ValueOf, Value
 
     override val freeVariables = result.map { it.orNull()?.name }.toSet()
 
-    override val inference = ReferenceTypeInference(context[HaskInternal, TIContext], result.mapValidated { it.name })
+    override val inference = ReferenceTypeInference(
+        context[HaskInternal, TIContext],
+        result.map { r -> r.map { it.name } }
+    )
 
     override fun compile(token: String): Validated<ValueOf> = token
         .takeIf { it.matches(IdentifierEditor.IDENTIFIER_REGEX) }

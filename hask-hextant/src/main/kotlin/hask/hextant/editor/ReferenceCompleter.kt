@@ -1,18 +1,21 @@
 package hask.hextant.editor
 
+import hask.core.type.TypeScheme
 import hask.hextant.context.HaskInternal
 import hask.hextant.ti.env.TIContext
 import hextant.Context
-import hextant.completion.*
-import hextant.completion.CompletionResult.Match
+import hextant.completion.Completion.Builder
+import hextant.completion.CompletionStrategy
+import hextant.completion.ConfiguredCompleter
 
-object ReferenceCompleter : Completer<Context, String> {
-    override fun completions(context: Context, input: String): Collection<Completion<String>> {
-        val ti = context[HaskInternal, TIContext]
-        return ti.env.now.entries.mapNotNull { (n, t) ->
-            val match = CompletionStrategy.simple.match(input, n) as? Match ?: return@mapNotNull null
-            val desc = ti.displayTypeScheme(t)
-            Completion(n, input, n, match.matchedRegions, "$n:$desc", desc, null)
-        }.toSet()
+object ReferenceCompleter : ConfiguredCompleter<Context, Pair<String, TypeScheme>>(CompletionStrategy.simple) {
+    override fun completionPool(context: Context): Collection<Pair<String, TypeScheme>> =
+        context[HaskInternal, TIContext].env.now.entries.map { it.toPair() }
+
+    override fun extractText(context: Context, item: Pair<String, TypeScheme>): String? = item.first
+
+    override fun Builder<Pair<String, TypeScheme>>.configure(context: Context) {
+        tooltipText
+        infoText = context[HaskInternal, TIContext].displayTypeScheme(completion.second)
     }
 }

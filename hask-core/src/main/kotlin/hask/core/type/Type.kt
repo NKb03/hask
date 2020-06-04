@@ -1,7 +1,5 @@
 package hask.core.type
 
-import hask.core.ast.ADT
-
 sealed class Type {
     object INT : Type() {
         override fun toString(): String = "int"
@@ -19,9 +17,9 @@ sealed class Type {
         override fun toString(): String = if (from.isComplex()) "($from) -> $to" else "$from -> $to"
     }
 
-    data class ParameterizedADT(val adt: ADT, val typeArguments: List<Type>) : Type() {
+    data class ParameterizedADT(val adt: String, val typeArguments: List<Type>) : Type() {
         override fun toString(): String = buildString {
-            append(adt.name)
+            append(adt)
             for (arg in typeArguments) {
                 append(' ')
                 val complex = arg.isComplex()

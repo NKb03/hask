@@ -7,17 +7,16 @@ import hask.hextant.view.IdentifierEditorControl
 import hask.hextant.view.ValueOfEditorControl
 import hextant.*
 import hextant.command.Command.Type.SingleReceiver
-import hextant.completion.NoCompleter
+import hextant.completion.*
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
-import hextant.core.view.ListEditorControl.Orientation
 import hextant.core.view.ListEditorControl.Orientation.Horizontal
+import hextant.core.view.ListEditorControl.Orientation.Vertical
 import hextant.core.view.ListEditorControl.SeparatorCell
-import hextant.fx.*
-import hextant.fx.ModifierValue.DOWN
+import hextant.fx.registerShortcuts
+import hextant.fx.view
 import hextant.plugin.dsl.PluginInitializer
-import javafx.scene.input.KeyCode.*
 import javafx.scene.text.Text
 import org.controlsfx.control.PopOver
 import reaktive.value.now
@@ -36,50 +35,42 @@ object HaskPlugin : PluginInitializer({
 
     view(::IdentifierEditorControl)
     view { e: IntLiteralEditor, bundle ->
-        FXTokenEditorView(e, bundle, NoCompleter).apply {
+        FXTokenEditorView(e, bundle).apply {
             root.styleClass.add("int-literal")
         }
     }
-    view { e: ValueOfEditor, bundle ->
-        ValueOfEditorControl(e, bundle)
-    }
-    view { e: ApplyEditor, bundle ->
-        CompoundEditorControl.build(e, bundle) {
-            line {
-                view(e.applied)
-                view(e.arguments) {
-                    set(ORIENTATION, Horizontal)
-                    set(CELL_FACTORY) { SeparatorCell("") }
-                }
+    view { e: ValueOfEditor, bundle -> ValueOfEditorControl(e, bundle) }
+    compoundView { e: ApplyEditor ->
+        line {
+            view(e.applied)
+            view(e.arguments) {
+                set(ORIENTATION, Horizontal)
+                set(CELL_FACTORY) { SeparatorCell("") }
             }
-            styleClass.add("apply")
         }
+        styleClass.add("apply")
     }
-    view { e: LambdaEditor, bundle ->
-        CompoundEditorControl.build(e, bundle) {
-            line {
-                operator("λ")
-                view(e.parameters)
-                operator("->")
-                view(e.body)
-            }
-            styleClass.add("lambda")
+    compoundView { e: LambdaEditor ->
+        line {
+            operator("λ")
+            view(e.parameters)
+            operator("->")
+            view(e.body)
         }
+        styleClass.add("lambda")
     }
-    view { e: LetEditor, bundle ->
-        CompoundEditorControl.build(e, bundle) {
-            line {
-                keyword("let")
-                space()
-                view(e.bindings)
-            }
-            line {
-                keyword("in")
-                space()
-                view(e.body)
-            }
-            styleClass.add("let")
+    compoundView { e: LetEditor ->
+        line {
+            keyword("let")
+            space()
+            view(e.bindings)
         }
+        line {
+            keyword("in")
+            space()
+            view(e.body)
+        }
+        styleClass.add("let")
     }
     compoundView { e: BindingEditor ->
         line {
@@ -87,17 +78,21 @@ object HaskPlugin : PluginInitializer({
             operator("=")
             view(e.value)
         }
+        styleClass.add("binding")
     }
     view { e: BindingListEditor, args ->
-        args[ORIENTATION] = Orientation.Vertical
+        args[ORIENTATION] = Vertical
         ListEditorControl.withAltText(e, "Add binding", args)
     }
     view { e: ExprExpander, bundle ->
-        FXExpanderView(e, bundle, ExprCompleter).apply {
+        val completer = CompoundCompleter<Context, Any?>()
+        completer.addCompleter(ReferenceCompleter)
+        completer.addCompleter(KeywordExprCompleter)
+        FXExpanderView(e, bundle, completer).apply {
             registerShortcuts {
-                on(shortcut(U) { control(DOWN) }) { e.wrapInApply() }
-                on(shortcut(V) { control(DOWN); alt(DOWN) }) { e.wrapInLet() }
-                on(shortcut(T) { control(DOWN) }) {
+                on("Ctrl+SPACE") { e.wrapInApply() }
+                on("Ctrl+Shift+V") { e.wrapInLet() }
+                on("Ctrl+T") {
                     val type = e.type.now
                     val ti = e.context[HaskInternal, TIContext]
                     val txt = ti.displayType(type)
@@ -113,99 +108,141 @@ object HaskPlugin : PluginInitializer({
                         show(this@apply)
                     }
                 }
-                on(shortcut(E) { control(DOWN) }) {
+                on("Ctrl+E") {
                     e.evaluateOnce()
                 }
-                //                on(shortcut(E) { control(DOWN); shift(DOWN) }) {
-                //                    e.evaluateFully()
-                //                }
-                //                on(shortcut(U) { control(DOWN) }) {
-                //                    e.unevaluate()
-                //                }
-                //                on(shortcut(U) { control(DOWN); shift(DOWN) }) {
-                //                    e.unevaluateFully()
-                //                }
+                on("Ctrl+Shift+E") {
+                    e.evaluateFully()
+                }
+                on("Ctrl+U") {
+                    e.unevaluate()
+                }
+                on("Ctrl+Shift+U") {
+                    e.unevaluateFully()
+                }
             }
         }
     }
-    view { e: IntegerPatternEditor, bundle ->
-        CompoundEditorControl.build(e, bundle) {
-            view(e.value)
-        }
+    compoundView { e: IntegerPatternEditor ->
+        view(e.value)
+        styleClass.add("integer-pattern")
     }
-    view { e: OtherwisePatternEditor, bundle ->
-        CompoundEditorControl.build(e, bundle) {
-            operator("_")
-        }
+    compoundView { e: OtherwisePatternEditor ->
+        operator("_")
+        styleClass.add("otherwise")
     }
-    view { e: CaseEditor, bundle ->
-        CompoundEditorControl.build(e, bundle) {
-            line {
-                view(e.pattern)
-                operator(" -> ")
-                view(e.body)
-            }
+    compoundView { e: CaseEditor ->
+        line {
+            view(e.pattern)
+            operator(" -> ")
+            view(e.body)
         }
+        styleClass.add("case")
     }
     view { e: CaseListEditor, bundle ->
         ListEditorControl(e, bundle)
     }
-    view { e: MatchEditor, bundle ->
-        CompoundEditorControl.build(e, bundle) {
-            line {
-                keyword("match")
-                view(e.matched)
-                keyword("with")
-            }
-            indented {
-                view(e.cases)
-            }
+    compoundView { e: MatchEditor ->
+        line {
+            keyword("match")
+            view(e.matched)
+            keyword("with")
         }
+        indented {
+            view(e.cases)
+        }
+        styleClass.add("match")
     }
-    view { e: IfEditor, bundle ->
-        CompoundEditorControl.build(e, bundle) {
-            line {
-                keyword("if")
-                space()
-                view(e.condition)
-                space()
-                keyword("then")
-                space()
-                view(e.ifTrue)
-            }
-            line {
-                keyword("else")
-                space()
-                view(e.ifFalse)
-            }
+    compoundView { e: IfEditor ->
+        line {
+            keyword("if")
+            space()
+            view(e.condition)
+            space()
+            keyword("then")
+            space()
+            view(e.ifTrue)
         }
+        line {
+            keyword("else")
+            space()
+            view(e.ifFalse)
+        }
+        styleClass.add("if")
+    }
+    view { e: TypeExpander, bundle ->
+        val completer = CompoundCompleter<Context, Any>()
+        completer.addCompleter(SimpleTypeCompleter)
+        completer.addCompleter(ParameterizedADTCompleter)
+        completer.addCompleter(TypeExpander.config.completer(CompletionStrategy.simple))
+        FXExpanderView(e, bundle, completer)
     }
     view { e: SimpleTypeEditor, bundle -> EditorControlWrapper(e, e.context.createView(e.name), bundle) }
-    view { e: FuncTypeEditor, bundle ->
-        CompoundEditorControl.build(e, bundle) {
-            line {
-                operator("(")
-                view(e.parameterType)
-                operator(" -> ")
-                view(e.resultType)
-                operator(")")
-            }
+    compoundView { e: FuncTypeEditor ->
+        line {
+            operator("(")
+            view(e.parameterType)
+            operator(" -> ")
+            view(e.resultType)
+            operator(")")
         }
     }
     view { e: IdentifierListEditor, bundle ->
         bundle[ORIENTATION] = Horizontal
-        bundle[CELL_FACTORY] = { SeparatorCell("") }
         ListEditorControl(e, bundle)
     }
-    view { e: TypeSchemeEditor, bundle ->
-        CompoundEditorControl.build(e, bundle) {
-            line {
-                operator("Ɐ")
-                view(e.parameters)
-                operator(" . ")
-                view(e.body)
+    compoundView { e: TypeSchemeEditor ->
+        line {
+            operator("Ɐ")
+            view(e.parameters)
+            operator(" . ")
+            view(e.body)
+        }
+    }
+    compoundView { e: ADTEditor ->
+        line {
+            keyword("data ")
+            view(e.name).root.styleClass.add("adt-name")
+            view(e.parameters) {
+                set(ORIENTATION, Horizontal)
             }
         }
+        styleClass.add("adt")
+    }
+    compoundView { e: ADTConstructorEditor ->
+        line {
+            view(e.name).root.styleClass.add("adt-constructor-name")
+            space()
+            view(e.parameters) {
+                set(ORIENTATION, Horizontal)
+            }
+        }
+        styleClass.add("adt-constructor")
+    }
+    compoundView { e: ADTDefEditor ->
+        line {
+            view(e.adt)
+            operator("=")
+            view(e.constructors) {
+                set(ORIENTATION, Horizontal)
+                set(CELL_FACTORY) { SeparatorCell(" | ") }
+            }
+        }
+        styleClass.add("adt-def")
+    }
+    compoundView { e: ProgramEditor ->
+        view(e.adtDefs) { set(ORIENTATION, Vertical) }
+        view(e.expr)
+    }
+    compoundView { e: ParameterizedADTEditor ->
+        line {
+            view(e.name) {
+                set(AbstractTokenEditorControl.COMPLETER, ParameterizedADTCompleter)
+            }.root.styleClass.add("parameterized-adt-name")
+            keyword(" of ")
+            view(e.typeArguments) { set(ORIENTATION, Horizontal) }
+        }
+        styleClass.add("parameterized-adt")
     }
     command(eval)
     registerCommand<ExprExpander, Unit> {
@@ -275,6 +312,9 @@ object HaskPlugin : PluginInitializer({
             }
         }
     }
+    inspection(::unresolvedVariableInspection)
+    inspection(::typeParameterUnresolvedInspection)
+    inspection(::unresolvedADTInspection)
     inspection(::typeConstraintInspection)
     inspection(::betaConversion)
     stylesheet("hextant/hask/style.css")

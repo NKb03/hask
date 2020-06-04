@@ -5,10 +5,10 @@
 package hask.hextant.editor
 
 import com.natpryce.hamkrest.should.shouldMatch
+import hask.core.ast.Builtin.Companion.BooleanT
 import hask.core.type.Type.Func
 import hask.core.type.Type.INT
 import hask.hextant.context.HaskInternal
-import hask.hextant.ti.Builtins.BoolT
 import hask.hextant.ti.assertType
 import hask.hextant.ti.env.TIContext
 import hask.hextant.ti.unify.ConstraintsHolderFactory
@@ -119,6 +119,6 @@ class EditorFlowTests {
             arguments.editors.now[0].doExpandTo("1")
             inference.errors.now shouldEqual emptySet()
         }
-        root.inference.assertType(Func(INT, BoolT))
+        root.inference.assertType(Func(INT, BooleanT))
     }
 }

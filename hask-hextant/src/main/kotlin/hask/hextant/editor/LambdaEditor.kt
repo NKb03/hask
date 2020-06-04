@@ -17,7 +17,6 @@ import hextant.core.editor.composeResult
 import reaktive.set.asSet
 import validated.*
 import validated.reaktive.ReactiveValidated
-import validated.reaktive.composeReactive
 
 class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEditor<Lambda> {
     val parameters by child(IdentifierListEditor(context))

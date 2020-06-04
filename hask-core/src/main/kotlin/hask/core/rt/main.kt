@@ -40,9 +40,9 @@ val fac = lambda(
 
 val List = ADT("List", listOf("a"))
 
-val Empty = ADTConstructor(List, "Empty", emptyList())
+val Empty = ADTConstructor("Empty", emptyList())
 
-val Cons = ADTConstructor(List, "Cons", listOf(Type.Var("a"), ParameterizedADT(List, listOf(Type.Var("a")))))
+val Cons = ADTConstructor("Cons", listOf(Type.Var("a"), ParameterizedADT("List", listOf(Type.Var("a")))))
 
 infix fun Expr.cons(rest: Expr) = ConstructorCall(Cons, listOf(this, rest))
 

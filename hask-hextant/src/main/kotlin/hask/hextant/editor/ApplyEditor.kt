@@ -16,7 +16,6 @@ import reaktive.set.asSet
 import reaktive.value.now
 import validated.isValid
 import validated.reaktive.ReactiveValidated
-import validated.reaktive.composeReactive
 
 class ApplyEditor private constructor(
     context: Context,
@@ -25,10 +24,6 @@ class ApplyEditor private constructor(
 ) : CompoundEditor<Apply>(context), ExprEditor<Apply> {
     val applied by child(left)
     val arguments by child(args)
-
-    init {
-        arguments.ensureNotEmpty()
-    }
 
     constructor(context: Context) : this(context, ExprExpander(context), ExprListEditor(context))
 
@@ -46,6 +41,10 @@ class ApplyEditor private constructor(
         applied.inference,
         arguments.editors.map { it.inference }
     )
+
+    init {
+        arguments.ensureNotEmpty()
+    }
 
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {
         applied.collectReferences(variable, acc)
