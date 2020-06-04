@@ -20,7 +20,7 @@ class ProgramEditor(context: Context) : CompoundEditor<Program>(context) {
     val adtDefs by child(ADTDefListEditor(context))
     val expr by child(ExprExpander(context))
 
-    private val defs = ADTDefinitions(adtDefs.results)
+    private val defs = ADTDefinitions(adtDefs.editors)
     private val observer = defs.bindConstructors(context[HaskInternal, TIContext].env)
 
     init {

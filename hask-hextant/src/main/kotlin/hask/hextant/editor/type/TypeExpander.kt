@@ -22,15 +22,14 @@ class TypeExpander(
             registerConstant("adt") { ParameterizedADTEditor(it) }
             registerConstant("int") { SimpleTypeEditor(it, "int") }
             registerInterceptor { text, context ->
-                val adts = context[ADTDefinitions].abstractDataTypes.now
-                val adt = adts.find { it.name == text } ?: return@registerInterceptor null
-                ParameterizedADTEditor(context).apply {
-                    name.setText(adt.name)
-                    typeArguments.resize(adt.typeParameters.size)
-                }
+                if (IdentifierEditor.IDENTIFIER_REGEX.matches(text)) SimpleTypeEditor(context, text) else null
             }
             registerInterceptor { text, context ->
-                if (IdentifierEditor.IDENTIFIER_REGEX.matches(text)) SimpleTypeEditor(context, text) else null
+                val adts = context[ADTDefinitions].abstractDataTypes.now
+                val adt = adts.find { it.name == text } ?: return@registerInterceptor null
+                ParameterizedADTEditor(context, adt.name).apply {
+                    typeArguments.resize(adt.typeParameters.size)
+                }
             }
         }
     }

@@ -25,10 +25,6 @@ class ApplyEditor private constructor(
     val applied by child(left)
     val arguments by child(args)
 
-    init {
-        arguments.ensureNotEmpty()
-    }
-
     constructor(context: Context) : this(context, ExprExpander(context), ExprListEditor(context))
 
     constructor(context: Context, left: ExprEditor<*>?, right: ExprEditor<*>?) : this(context) {
@@ -45,6 +41,10 @@ class ApplyEditor private constructor(
         applied.inference,
         arguments.editors.map { it.inference }
     )
+
+    init {
+        arguments.ensureNotEmpty()
+    }
 
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {
         applied.collectReferences(variable, acc)

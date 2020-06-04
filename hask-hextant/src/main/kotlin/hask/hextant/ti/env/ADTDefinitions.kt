@@ -10,19 +10,24 @@ import hask.core.type.Type.ParameterizedADT
 import hask.core.type.Type.Var
 import hask.core.type.TypeScheme
 import hask.core.type.functionType
+import hask.hextant.editor.ADTDefEditor
 import reaktive.Observer
 import reaktive.collection.binding.contains
 import reaktive.list.ReactiveList
+import reaktive.list.binding.values
 import reaktive.set.ReactiveSet
 import reaktive.set.asSet
 import reaktive.set.binding.mapNotNull
+import reaktive.set.binding.values
 import reaktive.value.binding.flatMap
 import reaktive.value.reactiveValue
 import validated.*
 import validated.reaktive.ReactiveValidated
 
-class ADTDefinitions(private val adtDefinitions: ReactiveList<Validated<ADTDef>>) {
-    val abstractDataTypes: ReactiveSet<ADT> = adtDefinitions.asSet().mapNotNull { def -> def.map { it.adt }.orNull() }
+class ADTDefinitions(editors: ReactiveList<ADTDefEditor>) {
+    private val results = editors.map { it.result }.values()
+    val abstractDataTypes: ReactiveSet<ADT> =
+        editors.asSet().mapNotNull { def -> def.adt.result }.values().mapNotNull { it.orNull() }
     private val availableNames = abstractDataTypes.map { it.name }
 
     fun isResolved(name: ReactiveValidated<String>) = name.flatMap { n ->
@@ -33,8 +38,8 @@ class ADTDefinitions(private val adtDefinitions: ReactiveList<Validated<ADTDef>>
     }
 
     fun bindConstructors(env: TIEnv): Observer {
-        for (def in adtDefinitions.now) def.ifValid { addDefinition(env, it) }
-        return adtDefinitions.observeList { ch ->
+        for (def in results.now) def.ifValid { addDefinition(env, it) }
+        return results.observeList { ch ->
             when {
                 ch.wasReplaced -> {
                     ch.removed.ifValid { removeDefinition(env, it) }

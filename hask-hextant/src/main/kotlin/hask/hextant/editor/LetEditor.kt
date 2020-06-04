@@ -24,10 +24,6 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
     val bindings by child(BindingListEditor(context))
     val body by child(ExprExpander(context.withTIContext { it.copy(env = it.env.child()) }))
 
-    init {
-        bindings.ensureNotEmpty()
-    }
-
     override val result: ReactiveValidated<Let> = composeResult(bindings, body)
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {
         if (bindings.editors.now.none { it.name.result.now == valid(variable) }) {
@@ -40,9 +36,8 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
 
     private val dependencyGraph = DependencyGraph(bindings.editors.map { b -> b.name.result to b.value.freeVariables })
 
-    override val freeVariables =
-        bindings.editors.asSet()
-            .flatMap { it.value.freeVariables } + body.freeVariables - dependencyGraph.boundVariables
+    override val freeVariables = bindings.editors.asSet()
+        .flatMap { it.value.freeVariables } + body.freeVariables - dependencyGraph.boundVariables
 
     override val inference = LetTypeInference(
         context[HaskInternal, TIContext],
@@ -50,6 +45,10 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
         dependencyGraph,
         body.inference
     )
+
+    init {
+        bindings.ensureNotEmpty()
+    }
 
     private fun bindings() = bindings.editors.now.map { Pair(it.name.result.now, it.value.inference) }
 
