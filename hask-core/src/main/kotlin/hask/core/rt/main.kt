@@ -31,7 +31,7 @@ operator fun String.invoke(vararg expressions: Expr): Expr = ValueOf(this).invok
 val fac = lambda(
     "n",
     body = Match(
-        "n".v, mapOf(
+        "n".v, listOf(
             Pattern.Integer("0") to 1.l,
             Pattern.Wildcard to "n".v * "fac"("n".v - 1.l)
         )
@@ -50,7 +50,7 @@ fun empty() = "Empty".v
 
 val map = lambda(
     "f", "list", body = Match(
-        "list".v, mapOf(
+        "list".v, listOf(
             Pattern.Destructuring("Empty", emptyList()) to empty(),
             Pattern.Destructuring("Cons", listOf(Variable("x"), Variable("xs"))) to ("f"("x".v) cons "map"("f".v, "xs".v))
         )

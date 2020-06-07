@@ -102,7 +102,7 @@ fun Expr.substitute(subst: Map<String, Expr>): Expr = when (this) {
     is If           -> If(cond.substitute(subst), then.substitute(subst), otherwise.substitute(subst))
     is Match        -> Match(
         expr.substitute(subst),
-        arms.mapValues { (p, v) -> v.substitute(subst - p.boundVariables()) }
+        arms.map { (p, v) -> p to v.substitute(subst - p.boundVariables()) }
     )
     is ApplyBuiltin -> ApplyBuiltin(name, parameters, returnType, arguments.map { it.substitute(subst) }, function)
     is Hole         -> this

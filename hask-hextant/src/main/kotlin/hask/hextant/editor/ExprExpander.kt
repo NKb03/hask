@@ -141,6 +141,7 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
             registerConstant("lambda") { LambdaEditor(it) }
             registerConstant("get") { ValueOfEditor(it) }
             registerConstant("if") { IfEditor(it) }
+            registerConstant("match") { MatchEditor(it) }
             registerInterceptor { text, context ->
                 val asInt = text.toIntOrNull()
                 when {

@@ -6,6 +6,8 @@ package hask.hextant.main
 
 import bundles.createBundle
 import hask.core.rt.eval
+import hask.core.rt.evaluate
+import hask.core.type.TopLevelEnv
 import hask.hextant.context.HaskInternal
 import hask.hextant.editor.ProgramEditor
 import hask.hextant.ti.env.TIContext
@@ -40,7 +42,8 @@ class HaskEditorApplication : HextantApplication() {
         box.registerShortcuts {
             on("Ctrl+X") {
                 val program = editor.result.now.ifInvalid { return@on }
-                val result = program.expr.eval().force()
+                val tl = TopLevelEnv(program.adtDefs)
+                val result = program.expr.evaluate(tl)
                 Alert(INFORMATION, result.toString()).show()
             }
             on("Ctrl+D") {

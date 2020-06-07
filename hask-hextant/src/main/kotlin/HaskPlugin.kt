@@ -7,7 +7,9 @@ import hask.hextant.view.IdentifierEditorControl
 import hask.hextant.view.ValueOfEditorControl
 import hextant.*
 import hextant.command.Command.Type.SingleReceiver
-import hextant.completion.*
+import hextant.completion.CompletionStrategy
+import hextant.completion.CompletionStrategy.Companion
+import hextant.completion.CompoundCompleter
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
@@ -88,7 +90,7 @@ object HaskPlugin : PluginInitializer({
     view { e: ExprExpander, bundle ->
         val completer = CompoundCompleter<Context, Any?>()
         completer.addCompleter(ReferenceCompleter)
-        completer.addCompleter(KeywordExprCompleter)
+        completer.addCompleter(ExprExpander.config.completer(CompletionStrategy.simple))
         FXExpanderView(e, bundle, completer).apply {
             registerShortcuts {
                 on("Ctrl+SPACE") { e.wrapInApply() }
@@ -128,9 +130,20 @@ object HaskPlugin : PluginInitializer({
         view(e.value)
         styleClass.add("integer-pattern")
     }
-    compoundView { e: OtherwisePatternEditor ->
+    view { e: IntegerPatternEditor, args -> EditorControlWrapper(e, e.context.createView(e.value, args), args) }
+    view { e: VariablePatternEditor, args -> EditorControlWrapper(e, e.context.createView(e.identifier, args), args) }
+    compoundView { e: DestructuringPatternEditor ->
+        line {
+            view(e.constructor)
+            view(e.arguments) {
+                set(CELL_FACTORY) { SeparatorCell("") }
+                set(ORIENTATION, Horizontal)
+            }
+        }
+    }
+    compoundView { e: WildcardPatternEditor ->
         operator("_")
-        styleClass.add("otherwise")
+        styleClass.add("wildcard-pattern")
     }
     compoundView { e: CaseEditor ->
         line {
@@ -140,17 +153,17 @@ object HaskPlugin : PluginInitializer({
         }
         styleClass.add("case")
     }
-    view { e: CaseListEditor, bundle ->
-        ListEditorControl(e, bundle)
-    }
     compoundView { e: MatchEditor ->
         line {
             keyword("match")
+            space()
             view(e.matched)
             keyword("with")
         }
         indented {
-            view(e.cases)
+            view(e.cases) {
+                set(ORIENTATION, Vertical)
+            }
         }
         styleClass.add("match")
     }
@@ -316,8 +329,8 @@ object HaskPlugin : PluginInitializer({
     inspection(::unresolvedVariableInspection)
     inspection(::typeParameterUnresolvedInspection)
     inspection(::unresolvedADTInspection)
-    inspection<IdentifierEditor, Inspection>(::invalidIdentifierInspection)
-    inspection<ValueOfEditor, Inspection>(::invalidIdentifierInspection)
+    inspection<IdentifierEditor>(::invalidIdentifierInspection)
+    inspection<ValueOfEditor>(::invalidIdentifierInspection)
     inspection(::invalidIntLiteralInspection)
     inspection(::typeConstraintInspection)
     inspection(::betaConversion)

@@ -35,7 +35,7 @@ private fun testOrDefault() {
         "default", "opt",
         body = Match(
             "opt".v,
-            mapOf(
+            listOf(
                 Destructuring("Just", listOf(Variable("value"))) to "value".v,
                 Destructuring("Nothing", emptyList()) to "default".v
             )

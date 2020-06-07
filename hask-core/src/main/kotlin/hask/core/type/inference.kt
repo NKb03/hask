@@ -32,7 +32,7 @@ fun Expr.freeVariables(env: Set<String>, collect: MutableSet<String> = mutableSe
             then.freeVariables(env, collect)
             otherwise.freeVariables(env, collect)
         }
-        is Match        -> arms.entries.flatMap { (p, e) -> e.freeVariables(env + p.boundVariables(), collect) }
+        is Match        -> arms.flatMap { (p, e) -> e.freeVariables(env + p.boundVariables(), collect) }
         is ApplyBuiltin -> arguments.forEach { it.freeVariables(env, collect) }
     }
     return collect
