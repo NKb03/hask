@@ -19,22 +19,17 @@ class ReferenceTypeInference(context: TIContext, private val name: ReactiveValid
     private val binding by lazy {
         name.flatMap {
             val n = it.ifInvalid { return@flatMap reactiveValue(Hole) }
-            context.env.resolve(n).map { t -> t ?: Hole }
+            context.env.resolve(n, this).map { t -> t ?: Hole }
         }
     }
 
     override val type: ReactiveValue<Type> get() = _type
     override fun onActivate() {
         addObserver(_type.bind(binding))
-        addObserver(type.forEach(::releaseAndUseNames))
     }
 
     override fun onDeactivate() {
         binding.dispose()
     }
 
-    private fun releaseAndUseNames(new: Type) {
-        releaseAllNames()
-        useNames(new.fvs(env = context.env.freeTypeVars.now))
-    }
 }

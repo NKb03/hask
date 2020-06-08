@@ -16,7 +16,7 @@ data class TIContext(
     val unificator: Unificator,
     val env: TIEnv
 ) {
-    fun child() = copy(env = TIEnv(env, namer))
+    fun child() = copy(env = TIEnv(env))
 
     fun displayType(type: Type) = type.apply(unificator.substitutions()).toString()
 
@@ -25,7 +25,7 @@ data class TIContext(
     companion object : Property<TIContext, HaskInternal, HaskInternal>("Type Inference Context") {
         fun root(): TIContext {
             val namer = ReleasableNamer()
-            val env = TIEnv(namer)
+            val env = TIEnv()
             val unifier = SimpleUnificator()
             return TIContext(namer, unifier, env)
         }

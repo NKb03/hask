@@ -30,11 +30,11 @@ class ApplyTypeInference(
     override fun doRecompute() {
         val f = function.type.now
         val args = argumentTypes.now
-        addConstraint(f, functionType(args, Var(ret)))
+        addConstraint(f, functionType(args, ret))
     }
 
     override fun onActivate() {
-        _type.set(Var(ret))
+        _type.set(ret)
     }
 
     private var _type = reactiveVariable<Type>(Hole)

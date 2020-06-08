@@ -5,8 +5,8 @@
 package hask.hextant.ti
 
 import com.natpryce.hamkrest.should.shouldMatch
+import hask.core.type.SimpleNamer
 import hask.core.type.Type.INT
-import hask.hextant.ti.env.ReleasableNamer
 import hask.hextant.ti.env.TIEnv
 import hextant.test.*
 import org.jetbrains.spek.api.Spek
@@ -15,11 +15,12 @@ import reaktive.value.now
 
 object TIEnvironmentSpec : Spek({
     given("an empty type inference environment") {
-        val env = TIEnv(ReleasableNamer())
+        val namer = SimpleNamer()
+        val env = TIEnv()
         it("should be empty") {
             env.now.entries shouldMatch isEmpty
         }
-        val t1 = env.resolve("v1")
+        val t1 = env.resolve("v1", namer)
         on("resolving some variable") {
             it("should be null") {
                 t1.now shouldBe `null`
@@ -42,7 +43,7 @@ object TIEnvironmentSpec : Spek({
             it("should have all the entries of the parent env") {
                 env.bind("v1", INT.generalize(emptySet()))
                 child.now shouldEqual mapOf("v1" to INT.generalize(emptySet()))
-                child.resolve("v1").now shouldEqual INT
+                child.resolve("v1", namer).now shouldEqual INT
             }
         }
     }

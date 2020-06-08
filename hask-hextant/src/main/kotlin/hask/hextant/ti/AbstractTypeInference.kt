@@ -4,7 +4,9 @@
 
 package hask.hextant.ti
 
+import hask.core.type.Namer
 import hask.core.type.Type
+import hask.core.type.Type.Var
 import hask.hextant.ti.env.TIContext
 import hask.hextant.ti.unify.Constraint
 import reaktive.*
@@ -14,7 +16,7 @@ import reaktive.value.*
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
-abstract class AbstractTypeInference(final override val context: TIContext) : TypeInference {
+abstract class AbstractTypeInference(final override val context: TIContext) : TypeInference, Namer {
     private var activated = false
     private var disposed = false
     final override val isActive: Boolean get() = activated && !disposed
@@ -24,9 +26,10 @@ abstract class AbstractTypeInference(final override val context: TIContext) : Ty
 
     private val constraints = mutableSetOf<Constraint>()
     private val usedNames = mutableSetOf<String>()
+    private val longTermNames = mutableSetOf<String>()
     private val observers = mutableSetOf<Observer>()
     private val shortTermObservers = mutableSetOf<Observer>()
-    private val delegates = mutableListOf<FreshName>()
+    private val delegates = mutableListOf<Delegate<Any>>()
 
     protected open fun onActivate() {}
 
@@ -57,15 +60,24 @@ abstract class AbstractTypeInference(final override val context: TIContext) : Ty
         constraints.clear()
     }
 
-    protected fun typeVariable(): ReadOnlyProperty<AbstractTypeInference, String> {
+    protected fun typeVariable(): ReadOnlyProperty<AbstractTypeInference, Var> = active { Var(longTermFreshName()) }
+
+    protected fun <T : Any> active(initializer: () -> T): ReadOnlyProperty<AbstractTypeInference, T> {
         check(!disposed) { "Already disposed" }
-        val d = FreshName()
-        delegates.add(d)
-        if (isActive) d.name = context.namer.freshName()
+        val d = Delegate(initializer)
+        if (isActive) d.activate()
+        else delegates.add(d)
         return d
     }
 
-    protected fun freshName(): String {
+    protected fun longTermFreshName(): String {
+        ensureActive()
+        val n = context.namer.freshName()
+        longTermNames.add(n)
+        return n
+    }
+
+    override fun freshName(): String {
         ensureActive()
         val n = context.namer.freshName()
         useName(n)
@@ -123,10 +135,8 @@ abstract class AbstractTypeInference(final override val context: TIContext) : Ty
 
     protected fun reset() {
         ensureActive()
-        context.unificator.removeAll(constraints)
-        constraints.clear()
-        usedNames.forEach { n -> context.namer.release(n) }
-        usedNames.clear()
+        clearConstraints()
+        releaseAllNames()
         shortTermObservers.forEach { o -> o.kill() }
         shortTermObservers.clear()
         onReset()
@@ -141,17 +151,16 @@ abstract class AbstractTypeInference(final override val context: TIContext) : Ty
     final override fun activate() {
         check(!activated) { "Already activated" }
         activated = true
-        for (d in delegates) d.name = context.namer.freshName()
-        children().forEach { c -> if (!c.isActive) c.activate() }
+        for (d in delegates) d.activate()
         onActivate()
         doRecompute()
+        children().forEach { c -> if (!c.isActive) c.activate() }
     }
 
     final override fun dispose() {
         ensureActive()
         observers.forEach { it.kill() }
         observers.clear()
-        delegates.forEach { d -> context.namer.release(d.name!!) }
         delegates.clear()
         reset()
         onDeactivate()
@@ -171,10 +180,15 @@ abstract class AbstractTypeInference(final override val context: TIContext) : Ty
         _errors.now.clear()
     }
 
-    private class FreshName : ReadOnlyProperty<AbstractTypeInference, String> {
-        var name: String? = null
+    private class Delegate<out T : Any>(initializer: () -> T) : ReadOnlyProperty<AbstractTypeInference, T> {
+        private lateinit var value: T
+        private var initializer: (() -> T)? = initializer
 
-        override fun getValue(thisRef: AbstractTypeInference, property: KProperty<*>): String =
-            name ?: error("Not activated")
+        fun activate() {
+            value = initializer?.invoke() ?: error("Already activated")
+            initializer = null
+        }
+
+        override fun getValue(thisRef: AbstractTypeInference, property: KProperty<*>): T = value
     }
 }

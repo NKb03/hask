@@ -13,7 +13,7 @@ class IfTypeInference(
     private val then: TypeInference,
     private val otherwise: TypeInference
 ) : AbstractTypeInference(context) {
-    private val result by lazy { Var(freshName()) }
+    private val result by typeVariable()
 
     private var _type = reactiveVariable<Type>(Hole)
     override val type: ReactiveValue<Type> get() = _type
