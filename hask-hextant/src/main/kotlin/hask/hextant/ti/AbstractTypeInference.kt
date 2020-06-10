@@ -9,6 +9,7 @@ import hask.core.type.Type
 import hask.core.type.Type.Var
 import hask.hextant.ti.env.TIContext
 import hask.hextant.ti.unify.Constraint
+import kollektion.Counter
 import reaktive.*
 import reaktive.set.ReactiveSet
 import reaktive.set.reactiveSet
@@ -24,7 +25,7 @@ abstract class AbstractTypeInference(final override val context: TIContext) : Ty
     private val _errors = reactiveSet<Pair<Type, Type>>()
     final override val errors: ReactiveSet<Pair<Type, Type>> get() = _errors
 
-    private val constraints = mutableSetOf<Constraint>()
+    private val constraints = Counter<Constraint>()
     private val usedNames = mutableSetOf<String>()
     private val longTermNames = mutableSetOf<String>()
     private val observers = mutableSetOf<Observer>()
@@ -41,22 +42,29 @@ abstract class AbstractTypeInference(final override val context: TIContext) : Ty
 
     protected open fun children(): Collection<TypeInference> = emptyList()
 
-    protected fun addConstraint(a: Type, b: Type) {
+    protected fun addConstraint(c: Constraint) {
         ensureActive()
+        if (constraints.add(c)) context.unificator.add(c)
+    }
+
+    protected fun addConstraint(a: Type, b: Type) {
         val c = Constraint(a, b, this)
-        constraints.add(c)
-        context.unificator.add(c)
+        addConstraint(c)
+    }
+
+    protected fun removeConstraint(c: Constraint) {
+        ensureActive()
+        if (constraints.remove(c)) context.unificator.remove(c)
     }
 
     protected fun removeConstraint(a: Type, b: Type) {
-        ensureActive()
         val c = Constraint(a, b, this)
-        if (constraints.remove(c)) context.unificator.remove(c)
+        removeConstraint(c)
     }
 
     protected fun clearConstraints() {
         ensureActive()
-        context.unificator.removeAll(constraints)
+        context.unificator.removeAll(constraints.asSet())
         constraints.clear()
     }
 
@@ -152,9 +160,9 @@ abstract class AbstractTypeInference(final override val context: TIContext) : Ty
         check(!activated) { "Already activated" }
         activated = true
         for (d in delegates) d.activate()
+        children().forEach { c -> if (!c.isActive) c.activate() }
         onActivate()
         doRecompute()
-        children().forEach { c -> if (!c.isActive) c.activate() }
     }
 
     final override fun dispose() {

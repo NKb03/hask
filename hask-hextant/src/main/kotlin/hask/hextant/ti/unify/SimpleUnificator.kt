@@ -6,12 +6,13 @@ package hask.hextant.ti.unify
 
 import hask.core.type.Type
 import hask.core.type.Type.*
+import kollektion.Counter
 import reaktive.dependencies
 import reaktive.value.*
 import reaktive.value.binding.binding
 
 class SimpleUnificator(private val parent: SimpleUnificator? = null) : Unificator {
-    private val constraints = mutableSetOf<Constraint>()
+    private val constraints = Counter<Constraint>()
     private val subst = mutableMapOf<String, ReactiveVariable<Type>>()
     private var locked = false
 
@@ -25,26 +26,28 @@ class SimpleUnificator(private val parent: SimpleUnificator? = null) : Unificato
     override fun add(constraint: Constraint) {
         parent?.add(constraint)
         executeSafely {
-            constraints.add(constraint)
-            unify(constraint.a, constraint.b, constraint)
+            println("add $constraint")
+            if (constraints.add(constraint)) {
+                unify(constraint.a, constraint.b, constraint)
+            } else println("does not change")
         }
     }
 
     private fun unify(a: Type, b: Type, c: Constraint) {
         val t1 = subst(a)
         val t2 = subst(b)
-        constraints.add(c)
         when {
-            t1 == t2 || t1 == Hole || t2 == Hole -> { }
-            t1 is Var && t1.name !in t2.fvs()    -> bind(t1.name, t2)
+            t1 == t2 || t1 == Hole || t2 == Hole           -> {
+            }
+            t1 is Var && t1.name !in t2.fvs()              -> bind(t1.name, t2)
             t2 is Var && t2.name !in t1.fvs()              -> bind(t2.name, t1)
             t1 is Func && t2 is Func                       -> {
                 unify(t1.from, t2.from, c)
                 unify(subst(t1.to), subst(t2.to), c)
             }
-            a is ParameterizedADT && b is ParameterizedADT -> {
-                if (a.adt != b.adt) c.display.reportError(a, b)
-                for ((ta1, ta2) in a.typeArguments.zip(b.typeArguments)) {
+            t1 is ParameterizedADT && t2 is ParameterizedADT -> {
+                if (t1.adt != t2.adt) c.display.reportError(a, b)
+                for ((ta1, ta2) in t1.typeArguments.zip(t2.typeArguments)) {
                     unify(subst(ta1), subst(ta2), c)
                 }
             }
@@ -53,11 +56,9 @@ class SimpleUnificator(private val parent: SimpleUnificator? = null) : Unificato
     }
 
     private fun bind(name: String, type: Type) {
-        println("Bind $name = $type")
         subst(name).set(type)
         for (t in subst.values) {
             val s = t.now.subst(name, type)
-            println("Substituting $t = $s")
             t.set(s)
         }
     }
@@ -69,20 +70,17 @@ class SimpleUnificator(private val parent: SimpleUnificator? = null) : Unificato
     override fun removeAll(cs: Collection<Constraint>) {
         parent?.removeAll(cs)
         executeSafely {
-            if (constraints.intersect(cs).isEmpty()) {
-                println("empty")
-                return@executeSafely
-            }
-            for (c in constraints) c.display.clearErrors()
-            constraints.removeAll(cs)
-            subst.entries.forEach { (name, t) ->
-                println("Resetting $name = $name")
-                t.set(Var(name))
-            }
-            for (c in constraints) {
-                println("Unify $c")
-                unify(c.a, c.b, c)
-            }
+            println("removing $cs")
+            if (constraints.removeAll(cs)) {
+                for (c in constraints.asSet()) c.display.clearErrors()
+                for (c in cs) c.display.clearErrors()
+                subst.entries.forEach { (name, t) ->
+                    t.set(Var(name))
+                }
+                for (c in constraints.asSet()) {
+                    unify(c.a, c.b, c)
+                }
+            } else println("does not change")
         }
     }
 
@@ -94,8 +92,8 @@ class SimpleUnificator(private val parent: SimpleUnificator? = null) : Unificato
         subst.mapValues { (_, s) -> s.now }.filter { (n, s) -> s != Var(n) }
 
     override fun substitute(type: Type): ReactiveValue<Type> = when (type) {
-        INT, Hole -> reactiveValue(type)
-        is Var    -> subst(type.name)
+        INT, Hole           -> reactiveValue(type)
+        is Var              -> subst(type.name)
         is Func             -> binding(substitute(type.from), substitute(type.to)) { a, b -> Func(a, b) }
         is ParameterizedADT -> {
             val args = type.typeArguments.map { substitute(it) }
@@ -103,7 +101,7 @@ class SimpleUnificator(private val parent: SimpleUnificator? = null) : Unificato
         }
     }
 
-    override fun constraints(): Set<Constraint> = constraints
+    override fun constraints(): Set<Constraint> = constraints.asSet()
 
     override fun child(): Unificator = SimpleUnificator(this)
 }

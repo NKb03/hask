@@ -5,10 +5,9 @@ import hask.hextant.editor.type.*
 import hask.hextant.ti.env.TIContext
 import hask.hextant.view.IdentifierEditorControl
 import hask.hextant.view.ValueOfEditorControl
-import hextant.*
+import hextant.Context
 import hextant.command.Command.Type.SingleReceiver
 import hextant.completion.CompletionStrategy
-import hextant.completion.CompletionStrategy.Companion
 import hextant.completion.CompoundCompleter
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
@@ -16,14 +15,13 @@ import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation.Horizontal
 import hextant.core.view.ListEditorControl.Orientation.Vertical
 import hextant.core.view.ListEditorControl.SeparatorCell
+import hextant.createView
 import hextant.fx.registerShortcuts
 import hextant.fx.view
-import hextant.inspect.Inspection
 import hextant.plugin.dsl.PluginInitializer
 import javafx.scene.text.Text
 import org.controlsfx.control.PopOver
 import reaktive.value.now
-import java.nio.file.Paths
 
 object HaskPlugin : PluginInitializer({
     name = "Hextant Hask Plugin"
@@ -134,12 +132,18 @@ object HaskPlugin : PluginInitializer({
     view { e: VariablePatternEditor, args -> EditorControlWrapper(e, e.context.createView(e.identifier, args), args) }
     compoundView { e: DestructuringPatternEditor ->
         line {
-            view(e.constructor)
+            view(e.constructor).root.styleClass.add("adt-constructor-name")
             view(e.arguments) {
                 set(CELL_FACTORY) { SeparatorCell("") }
                 set(ORIENTATION, Horizontal)
             }
         }
+    }
+    view { e: PatternExpander, bundle ->
+        val completer = CompoundCompleter<Context, Any>()
+        completer.addCompleter(PatternExpander.config.completer(CompletionStrategy.simple))
+        completer.addCompleter(DestructuringPatternCompleter)
+        FXExpanderView(e, bundle, completer)
     }
     compoundView { e: WildcardPatternEditor ->
         operator("_")
@@ -253,7 +257,7 @@ object HaskPlugin : PluginInitializer({
             view(e.name) {
                 set(AbstractTokenEditorControl.COMPLETER, ParameterizedADTCompleter)
             }.root.styleClass.add("parameterized-adt-name")
-            keyword(" of ")
+            space()
             view(e.typeArguments) { set(ORIENTATION, Horizontal) }
         }
         styleClass.add("parameterized-adt")
@@ -280,52 +284,10 @@ object HaskPlugin : PluginInitializer({
         type = SingleReceiver
         executing { e, _ -> e.freeVariables.now.toString() }
     }
-    registerCommand<ExprExpander, String> {
-        name = "save"
-        shortName = "save"
-        description = "Saves the selected editor to the specified file"
-        type = SingleReceiver
-        addParameter {
-            ofType<String>()
-            name = "file"
-            description = "The destination file"
-        }
-        applicableIf { it.isExpanded }
-        executing { expander, args ->
-            val file = args[0] as String
-            val path = Paths.get(file)
-            val output = expander.context.createOutput(path)
-            try {
-                output.writeUntyped(expander)
-                "Successfully saved to $path"
-            } catch (ex: Throwable) {
-                ex.message?.let { "Failure: $it" } ?: "Unknown error"
-            }
-        }
-    }
-    registerCommand<ExprExpander, String> {
-        name = "open"
-        shortName = "open"
-        description = "Reads the selected editor from the specified file"
-        type = SingleReceiver
-        addParameter {
-            ofType<String>()
-            name = "file"
-            description = "The input file"
-        }
-        applicableIf { !it.isExpanded }
-        executing { expander, args ->
-            val file = args[0] as String
-            val path = Paths.get(file)
-            val input = expander.context.createInput(path)
-            try {
-                input.readInplace(expander)
-                "Successfully read from $path"
-            } catch (ex: Throwable) {
-                ex.message?.let { "Failure: $it" } ?: "Unknown error"
-            }
-        }
-    }
+    command<ExprEditor<*>>(save)
+    command<ExprEditor<*>>(open)
+    command<ADTDefEditor>(save)
+    command<ADTDefEditor>(open)
     inspection(::unresolvedVariableInspection)
     inspection(::typeParameterUnresolvedInspection)
     inspection(::unresolvedADTInspection)

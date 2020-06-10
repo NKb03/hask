@@ -14,7 +14,9 @@ class ExpanderTypeInference(
     context: TIContext,
     private val inference: ReactiveValue<TypeInference?>
 ) : AbstractTypeInference(context) {
-    override val type: ReactiveValue<Type> = inference.flatMap { inf -> inf?.type ?: reactiveValue(Hole) }
+    override val type: ReactiveValue<Type> by lazy {
+        inference.flatMap { inf -> inf?.type ?: reactiveValue(Hole) }
+    }
 
     override fun children(): Collection<TypeInference> = inference.now?.let { listOf(it) } ?: emptyList()
 }

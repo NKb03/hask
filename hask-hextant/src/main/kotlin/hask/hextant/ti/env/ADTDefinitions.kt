@@ -15,10 +15,13 @@ import reaktive.Observer
 import reaktive.collection.binding.contains
 import reaktive.list.ReactiveList
 import reaktive.list.binding.values
+import reaktive.map.bindings.get
+import reaktive.map.reactiveMap
 import reaktive.set.ReactiveSet
 import reaktive.set.asSet
 import reaktive.set.binding.mapNotNull
 import reaktive.set.binding.values
+import reaktive.value.ReactiveValue
 import reaktive.value.binding.flatMap
 import reaktive.value.reactiveValue
 import validated.*
@@ -29,6 +32,8 @@ class ADTDefinitions(editors: ReactiveList<ADTDefEditor>) {
     val abstractDataTypes: ReactiveSet<ADT> =
         editors.asSet().mapNotNull { def -> def.adt.result }.values().mapNotNull { it.orNull() }
     private val availableNames = abstractDataTypes.map { it.name }
+    private val constructorInfo = reactiveMap<String, Pair<ADT, ADTConstructor>>()
+    private val constructors = mutableSetOf<ADTConstructor>()
 
     fun isResolved(name: ReactiveValidated<String>) = name.flatMap { n ->
         n.fold(
@@ -36,6 +41,8 @@ class ADTDefinitions(editors: ReactiveList<ADTDefEditor>) {
             onInvalid = { reactiveValue(true) }
         )
     }
+
+    fun constructors(): Collection<ADTConstructor> = constructors
 
     fun bindConstructors(env: TIEnv): Observer {
         for (def in results.now) def.ifValid { addDefinition(env, it) }
@@ -51,11 +58,15 @@ class ADTDefinitions(editors: ReactiveList<ADTDefEditor>) {
         }
     }
 
+    fun getInfo(constructor: String): ReactiveValue<Pair<ADT, ADTConstructor>?> = constructorInfo[constructor]
+
     private fun addDefinition(env: TIEnv, def: ADTDef) {
         for (cstr in def.constructors) {
             if (env.declaredType(cstr.name) != null) continue
             val scheme = getTypeScheme(def.adt, cstr)
             env.bind(cstr.name, scheme)
+            constructorInfo.now[cstr.name] = def.adt to cstr
+            constructors.add(cstr)
         }
     }
 
@@ -63,6 +74,8 @@ class ADTDefinitions(editors: ReactiveList<ADTDefEditor>) {
         for (cstr in def.constructors) {
             val scheme = getTypeScheme(def.adt, cstr)
             if (env.declaredType(cstr.name) == scheme) env.unbind(cstr.name)
+            constructorInfo.now.remove(cstr.name)
+            constructors.remove(cstr)
         }
     }
 

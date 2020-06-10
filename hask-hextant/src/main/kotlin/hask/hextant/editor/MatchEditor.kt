@@ -7,7 +7,9 @@ package hask.hextant.editor
 import hask.core.ast.Expr.Match
 import hask.core.type.boundVariables
 import hask.hextant.context.HaskInternal
+import hask.hextant.ti.MatchTypeInference
 import hask.hextant.ti.TypeInference
+import hask.hextant.ti.env.ADTDefinitions
 import hask.hextant.ti.env.TIContext
 import hextant.Context
 import hextant.base.CompoundEditor
@@ -38,6 +40,7 @@ class MatchEditor(context: Context) : CompoundEditor<Match>(context), ExprEditor
     override val inference: TypeInference = MatchTypeInference(
         context[HaskInternal, TIContext],
         matched.inference,
-        cases.editors.map { it.pattern.result to it.body.inference }
+        cases.editors.map { it.pattern.result to it.body.inference },
+        context[ADTDefinitions]
     )
 }
