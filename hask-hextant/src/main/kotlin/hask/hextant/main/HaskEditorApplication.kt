@@ -56,12 +56,12 @@ class HaskEditorApplication : HextantApplication() {
             on("Ctrl+P") {
                 cli.receiveFocus()
             }
-            on("INSERT") {
+            on("Ctrl+Shift+P") {
                 val selected = context[SelectionDistributor].selectedView
                 selected.now?.focus()
             }
         }
-        box.setPrefSize(500.0, 500.0)
+        box.setPrefSize(854.0, 480.0)
         return box
     }
 

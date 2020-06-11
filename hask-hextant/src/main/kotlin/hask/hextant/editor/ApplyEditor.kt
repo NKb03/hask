@@ -21,19 +21,12 @@ import validated.force
 import validated.isValid
 import validated.reaktive.ReactiveValidated
 
-class ApplyEditor private constructor(
-    context: Context,
-    left: ExprExpander,
-    args: ExprListEditor
-) : CompoundEditor<Apply>(context), ExprEditor<Apply> {
-    val applied by child(left)
-    val arguments by child(args)
+class ApplyEditor(context: Context) : CompoundEditor<Apply>(context), ExprEditor<Apply> {
+    val applied by child(ExprExpander(context))
+    val arguments by child(ExprListEditor(context))
 
-    constructor(context: Context) : this(context, ExprExpander(context), ExprListEditor(context))
-
-    constructor(context: Context, left: ExprEditor<*>?, right: ExprEditor<*>?) : this(context) {
-        if (left != null) applied.setEditor(left)
-        if (right != null) arguments.editors.now[0].setEditor(right)
+    constructor(context: Context, left: ExprEditor<*>) : this(context) {
+        applied.setEditor(left, undoable = false)
     }
 
     override val result: ReactiveValidated<Apply> = composeResult(applied, arguments)
@@ -64,10 +57,10 @@ class ApplyEditor private constructor(
     }
 
     override fun canEvalOneStep(): Boolean = when (val applied = applied.editor.now) {
-        is LambdaEditor  -> applied.parameters.result.now.isValid && applied.body.isExpanded
+        is LambdaEditor -> applied.parameters.result.now.isValid && applied.body.isExpanded
         is ValueOfEditor -> applied.text.now in Builtin.prelude
                 && arguments.result.now.force().all { it.isNormalForm() }
                 && context[Inspections].getProblems(this).isEmpty()
-        else             -> false
+        else -> false
     }
 }

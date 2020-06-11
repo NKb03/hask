@@ -200,3 +200,8 @@ fun Pattern.inferExpectedType(
         ParameterizedADT(adt.name, typeArguments)
     }
 }
+
+fun Type.argumentsToSaturate(): Int = when (this) {
+    is Func -> to.argumentsToSaturate() + 1
+    else    -> 0
+}

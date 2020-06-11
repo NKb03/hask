@@ -118,4 +118,6 @@ class GroupedUnificator(private val parent: GroupedUnificator? = null) : Unifica
     override fun constraints(): Set<Constraint> = constraints.values.flatten().toSet()
 
     override fun child(): Unificator = GroupedUnificator(this)
+
+    override fun root(): Unificator = parent?.root() ?: this
 }

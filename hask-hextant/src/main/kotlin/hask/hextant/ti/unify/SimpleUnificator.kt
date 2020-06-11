@@ -104,4 +104,6 @@ class SimpleUnificator(private val parent: SimpleUnificator? = null) : Unificato
     override fun constraints(): Set<Constraint> = constraints.asSet()
 
     override fun child(): Unificator = SimpleUnificator(this)
+
+    override fun root(): Unificator = parent?.root() ?: this
 }

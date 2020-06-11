@@ -88,10 +88,11 @@ object HaskPlugin : PluginInitializer({
     view { e: ExprExpander, bundle ->
         val completer = CompoundCompleter<Context, Any?>()
         completer.addCompleter(ReferenceCompleter)
+        completer.addCompleter(FunctionApplicationCompleter)
         completer.addCompleter(ExprExpander.config.completer(CompletionStrategy.simple))
         FXExpanderView(e, bundle, completer).apply {
             registerShortcuts {
-                on("Ctrl+SPACE") { e.wrapInApply() }
+                on("Ctrl+J") { e.wrapInApply() }
                 on("Ctrl+Shift+V") { e.wrapInLet() }
                 on("Ctrl+T") {
                     val type = e.type.now

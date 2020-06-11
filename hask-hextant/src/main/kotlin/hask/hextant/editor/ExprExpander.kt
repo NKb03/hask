@@ -19,6 +19,7 @@ import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.ExpanderConfig
 import hextant.snapshot
 import hextant.undo.compoundEdit
+import reaktive.list.binding.first
 import reaktive.set.binding.flattenToSet
 import reaktive.set.emptyReactiveSet
 import reaktive.value.binding.map
@@ -36,6 +37,12 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
     private val evalStack: Deque<EditorSnapshot<ExprEditor<Expr>>> = LinkedList()
 
     override fun onExpansion(editor: ExprEditor<Expr>) {
+        if (editor is ApplyEditor && editor.arguments.editors.now.isNotEmpty()) {
+            val e = editor.arguments.editors.now.first()
+            views {
+                group.getViewOf(e).focus()
+            }
+        }
         if (this.inference.isActive) {
             //println("expanded, activating ${editor.result.now}")
             editor.inference.activate()
@@ -145,11 +152,21 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
             registerInterceptor { text, context ->
                 val asInt = text.toIntOrNull()
                 when {
-                    asInt != null                   ->
-                        IntLiteralEditor(context, text)
-                    text.matches(IDENTIFIER_REGEX) ->
-                        ValueOfEditor(context, text)
-                    else                            -> null
+                    asInt != null                  -> IntLiteralEditor(context, text)
+                    text.matches(IDENTIFIER_REGEX) -> ValueOfEditor(context, text)
+                    text.endsWith("_") -> {
+                        val i = text.indexOf('_')
+                        val name = text.take(i).trimEnd()
+                        if (!name.matches(IDENTIFIER_REGEX)) null
+                        else if (text.drop(i).any { it != ' ' && it != '_' }) null
+                        else {
+                            val args = text.drop(i).count { it == '_' }
+                            val e = ApplyEditor(context, ValueOfEditor(context, name))
+                            e.arguments.resize(args)
+                            e
+                        }
+                    }
+                    else                           -> null
                 }
             }
         }

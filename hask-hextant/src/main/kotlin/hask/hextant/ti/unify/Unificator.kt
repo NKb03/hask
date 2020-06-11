@@ -23,4 +23,6 @@ interface Unificator {
     fun constraints(): Set<Constraint>
 
     fun child(): Unificator
+
+    fun root(): Unificator
 }

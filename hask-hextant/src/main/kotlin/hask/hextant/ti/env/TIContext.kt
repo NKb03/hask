@@ -18,9 +18,9 @@ data class TIContext(
 ) {
     fun child() = copy(env = TIEnv(env))
 
-    fun displayType(type: Type) = type.apply(unificator.substitutions()).toString()
+    fun displayType(type: Type) = type.apply(unificator.root().substitutions()).toString()
 
-    fun displayTypeScheme(type: TypeScheme) = type.apply(unificator.substitutions()).toString()
+    fun displayTypeScheme(type: TypeScheme) = type.apply(unificator.root().substitutions()).toString()
 
     companion object : Property<TIContext, HaskInternal, HaskInternal>("Type Inference Context") {
         fun root(): TIContext {
