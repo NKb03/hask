@@ -13,6 +13,7 @@ import hask.hextant.editor.ProgramEditor
 import hask.hextant.ti.env.TIContext
 import hextant.*
 import hextant.command.line.*
+import hextant.context.*
 import hextant.fx.registerShortcuts
 import hextant.main.HextantApplication
 import hextant.serial.makeRoot
@@ -57,7 +58,7 @@ class HaskEditorApplication : HextantApplication() {
                 cli.receiveFocus()
             }
             on("Ctrl+Shift+P") {
-                val selected = context[SelectionDistributor].selectedView
+                val selected = context[SelectionDistributor].focusedView
                 selected.now?.focus()
             }
         }

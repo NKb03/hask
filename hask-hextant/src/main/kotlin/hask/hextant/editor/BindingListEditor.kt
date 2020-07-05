@@ -5,7 +5,7 @@
 package hask.hextant.editor
 
 import hask.core.ast.Expr.Binding
-import hextant.Context
+import hextant.context.Context
 import hextant.core.editor.ListEditor
 
 class BindingListEditor(context: Context) : ListEditor<Binding, BindingEditor>(context) {

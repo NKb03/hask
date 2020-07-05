@@ -5,7 +5,7 @@
 package hask.hextant.editor
 
 import hask.core.ast.Pattern
-import hextant.Editor
+import hextant.core.Editor
 import reaktive.set.ReactiveSet
 
 interface PatternEditor<out P : Pattern> : Editor<P> {

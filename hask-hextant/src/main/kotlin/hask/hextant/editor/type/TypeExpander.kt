@@ -7,7 +7,7 @@ package hask.hextant.editor.type
 import hask.core.parse.IDENTIFIER_REGEX
 import hask.core.type.Type
 import hask.hextant.ti.env.ADTDefinitions
-import hextant.Context
+import hextant.context.Context
 import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.ExpanderConfig
 import reaktive.value.now

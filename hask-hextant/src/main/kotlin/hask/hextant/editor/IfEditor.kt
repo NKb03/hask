@@ -9,8 +9,8 @@ import hask.core.ast.Expr.If
 import hask.hextant.context.HaskInternal
 import hask.hextant.ti.IfTypeInference
 import hask.hextant.ti.env.TIContext
-import hextant.Context
-import hextant.base.CompoundEditor
+import hextant.context.Context
+import hextant.core.editor.CompoundEditor
 import hextant.core.editor.composeResult
 import reaktive.value.now
 import validated.ifInvalid

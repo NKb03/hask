@@ -11,15 +11,11 @@ import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.ti.ExpanderTypeInference
 import hask.hextant.ti.env.TIContext
-import hextant.Context
-import hextant.base.EditorSnapshot
 import hextant.command.Command.Type.SingleReceiver
 import hextant.command.meta.ProvideCommand
-import hextant.core.editor.ConfiguredExpander
-import hextant.core.editor.ExpanderConfig
-import hextant.snapshot
+import hextant.context.Context
+import hextant.core.editor.*
 import hextant.undo.compoundEdit
-import reaktive.list.binding.first
 import reaktive.set.binding.flattenToSet
 import reaktive.set.emptyReactiveSet
 import reaktive.value.binding.map
@@ -37,10 +33,14 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
     private val evalStack: Deque<EditorSnapshot<ExprEditor<Expr>>> = LinkedList()
 
     override fun onExpansion(editor: ExprEditor<Expr>) {
-        if (editor is ApplyEditor && editor.arguments.editors.now.isNotEmpty()) {
-            val e = editor.arguments.editors.now.first()
-            views {
-                group.getViewOf(e).focus()
+        if (editor is ApplyEditor) {
+            val applied = editor.applied.result.now
+            val args = editor.arguments.editors.now
+            if (args.isNotEmpty() && applied.map { !it.containsHoles() }.ifInvalid { false }) {
+                val e = args.first()
+                views {
+                    group.getViewOf(e).focus()
+                }
             }
         }
         if (this.inference.isActive) {

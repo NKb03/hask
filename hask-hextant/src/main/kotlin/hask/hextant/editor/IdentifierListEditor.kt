@@ -4,7 +4,7 @@
 
 package hask.hextant.editor
 
-import hextant.Context
+import hextant.context.Context
 import hextant.core.editor.ListEditor
 
 class IdentifierListEditor(context: Context) : ListEditor<String, IdentifierEditor>(context) {

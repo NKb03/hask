@@ -10,7 +10,7 @@ import hask.hextant.context.HaskInternal
 import hask.hextant.ti.ReferenceTypeInference
 import hask.hextant.ti.env.TIContext
 import hask.hextant.view.ValueOfEditorView
-import hextant.Context
+import hextant.context.Context
 import hextant.core.editor.TokenEditor
 import reaktive.set.toSet
 import reaktive.value.binding.map

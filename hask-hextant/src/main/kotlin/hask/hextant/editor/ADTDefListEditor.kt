@@ -5,7 +5,7 @@
 package hask.hextant.editor
 
 import hask.core.ast.ADTDef
-import hextant.Context
+import hextant.context.Context
 import hextant.core.editor.ListEditor
 
 class ADTDefListEditor(context: Context) : ListEditor<ADTDef, ADTDefEditor>(context) {

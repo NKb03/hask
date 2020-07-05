@@ -11,8 +11,8 @@ import hask.hextant.ti.MatchTypeInference
 import hask.hextant.ti.TypeInference
 import hask.hextant.ti.env.ADTDefinitions
 import hask.hextant.ti.env.TIContext
-import hextant.Context
-import hextant.base.CompoundEditor
+import hextant.context.Context
+import hextant.core.editor.CompoundEditor
 import hextant.core.editor.composeResult
 import reaktive.set.ReactiveSet
 import reaktive.set.asSet

@@ -9,7 +9,7 @@ import hask.core.type.argumentsToSaturate
 import hask.hextant.context.HaskInternal
 import hask.hextant.editor.FunctionApplicationCompleter.ApplicationCompletion
 import hask.hextant.ti.env.TIContext
-import hextant.Context
+import hextant.context.Context
 import hextant.completion.Completion.Builder
 import hextant.completion.CompletionStrategy
 import hextant.completion.ConfiguredCompleter

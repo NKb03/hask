@@ -5,8 +5,8 @@
 package hask.hextant.editor.type
 
 import hask.core.type.Type
-import hextant.Context
-import hextant.base.CompoundEditor
+import hextant.context.Context
+import hextant.core.editor.CompoundEditor
 import hextant.core.editor.composeResult
 import validated.reaktive.ReactiveValidated
 

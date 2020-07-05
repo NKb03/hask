@@ -5,10 +5,8 @@
 package hask.hextant.editor
 
 import hask.core.ast.Pattern.Wildcard
-import hextant.Context
-import hextant.EditorView
-import hextant.base.AbstractEditor
-import hextant.base.CompoundEditor
+import hextant.context.Context
+import hextant.core.editor.CompoundEditor
 import reaktive.set.ReactiveSet
 import reaktive.set.emptyReactiveSet
 import reaktive.value.reactiveValue

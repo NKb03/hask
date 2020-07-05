@@ -4,7 +4,7 @@ import hask.core.type.TypeScheme
 import hask.hextant.context.HaskInternal
 import hask.hextant.editor.ReferenceCompleter.Reference
 import hask.hextant.ti.env.TIContext
-import hextant.Context
+import hextant.context.Context
 import hextant.completion.Completion.Builder
 import hextant.completion.CompletionStrategy
 import hextant.completion.ConfiguredCompleter

@@ -2,7 +2,7 @@ package hask.hextant.editor
 
 import hask.core.ast.ADTConstructor
 import hask.hextant.ti.env.ADTDefinitions
-import hextant.Context
+import hextant.context.Context
 import hextant.completion.Completion.Builder
 import hextant.completion.CompletionStrategy
 import hextant.completion.ConfiguredCompleter

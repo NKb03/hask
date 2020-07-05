@@ -8,7 +8,7 @@ import hask.core.ast.Expr
 import hask.core.type.Type
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.ti.TypeInference
-import hextant.Editor
+import hextant.core.Editor
 import reaktive.set.ReactiveSet
 import reaktive.value.ReactiveValue
 
@@ -20,8 +20,6 @@ interface ExprEditor<out E : Expr> : Editor<E> {
     val freeVariables: ReactiveSet<String>
 
     fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>)
-
-    override fun supportsCopyPaste(): Boolean = true
 
     fun buildEnv(env: EvaluationEnv) {}
 

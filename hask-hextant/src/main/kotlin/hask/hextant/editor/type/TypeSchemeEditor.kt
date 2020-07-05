@@ -6,9 +6,9 @@ package hask.hextant.editor.type
 
 import hask.core.type.TypeScheme
 import hask.hextant.editor.IdentifierListEditor
-import hextant.Context
-import hextant.EditorView
-import hextant.base.AbstractEditor
+import hextant.context.Context
+import hextant.core.EditorView
+import hextant.core.editor.AbstractEditor
 import hextant.core.editor.composeResult
 import validated.reaktive.ReactiveValidated
 

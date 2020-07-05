@@ -11,8 +11,8 @@ import hask.hextant.eval.EvaluationEnv
 import hask.hextant.eval.EvaluationEnv.Resolution.Parameter
 import hask.hextant.ti.LambdaTypeInference
 import hask.hextant.ti.env.TIContext
-import hextant.Context
-import hextant.base.CompoundEditor
+import hextant.context.Context
+import hextant.core.editor.CompoundEditor
 import hextant.core.editor.composeResult
 import reaktive.set.asSet
 import validated.*

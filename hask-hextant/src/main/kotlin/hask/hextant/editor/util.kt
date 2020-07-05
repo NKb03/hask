@@ -8,8 +8,8 @@ import hask.core.ast.Expr
 import hask.hextant.context.HaskInternal
 import hask.hextant.ti.TypeInference
 import hask.hextant.ti.env.TIContext
-import hextant.Context
-import hextant.Editor
+import hextant.context.Context
+import hextant.core.Editor
 import reaktive.value.now
 import validated.ifValid
 

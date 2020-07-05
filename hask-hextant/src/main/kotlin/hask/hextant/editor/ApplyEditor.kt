@@ -11,8 +11,8 @@ import hask.core.rt.isNormalForm
 import hask.hextant.context.HaskInternal
 import hask.hextant.ti.ApplyTypeInference
 import hask.hextant.ti.env.TIContext
-import hextant.Context
-import hextant.base.CompoundEditor
+import hextant.context.Context
+import hextant.core.editor.CompoundEditor
 import hextant.core.editor.composeResult
 import hextant.inspect.Inspections
 import reaktive.set.asSet

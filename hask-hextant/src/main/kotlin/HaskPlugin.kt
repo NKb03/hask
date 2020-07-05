@@ -5,17 +5,17 @@ import hask.hextant.editor.type.*
 import hask.hextant.ti.env.TIContext
 import hask.hextant.view.IdentifierEditorControl
 import hask.hextant.view.ValueOfEditorControl
-import hextant.Context
 import hextant.command.Command.Type.SingleReceiver
 import hextant.completion.CompletionStrategy
 import hextant.completion.CompoundCompleter
+import hextant.context.Context
+import hextant.context.createView
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Companion.CELL_FACTORY
 import hextant.core.view.ListEditorControl.Companion.ORIENTATION
 import hextant.core.view.ListEditorControl.Orientation.Horizontal
 import hextant.core.view.ListEditorControl.Orientation.Vertical
 import hextant.core.view.ListEditorControl.SeparatorCell
-import hextant.createView
 import hextant.fx.registerShortcuts
 import hextant.fx.view
 import hextant.plugin.dsl.PluginInitializer
@@ -36,7 +36,7 @@ object HaskPlugin : PluginInitializer({
 
     view(::IdentifierEditorControl)
     view { e: IntLiteralEditor, bundle ->
-        FXTokenEditorView(e, bundle).apply {
+        TokenEditorControl(e, bundle).apply {
             root.styleClass.add("int-literal")
         }
     }
@@ -86,11 +86,11 @@ object HaskPlugin : PluginInitializer({
         ListEditorControl.withAltText(e, "Add binding", args)
     }
     view { e: ExprExpander, bundle ->
-        val completer = CompoundCompleter<Context, Any?>()
+        val completer = CompoundCompleter<Context, Any>()
         completer.addCompleter(ReferenceCompleter)
         completer.addCompleter(FunctionApplicationCompleter)
         completer.addCompleter(ExprExpander.config.completer(CompletionStrategy.simple))
-        FXExpanderView(e, bundle, completer).apply {
+        ExpanderControl(e, bundle, completer).apply {
             registerShortcuts {
                 on("Ctrl+J") { e.wrapInApply() }
                 on("Ctrl+Shift+V") { e.wrapInLet() }
@@ -144,9 +144,9 @@ object HaskPlugin : PluginInitializer({
         val completer = CompoundCompleter<Context, Any>()
         completer.addCompleter(PatternExpander.config.completer(CompletionStrategy.simple))
         completer.addCompleter(DestructuringPatternCompleter)
-        FXExpanderView(e, bundle, completer)
+        ExpanderControl(e, bundle, completer)
     }
-    compoundView { e: WildcardPatternEditor ->
+    compoundView { _: WildcardPatternEditor ->
         operator("_")
         styleClass.add("wildcard-pattern")
     }
@@ -194,7 +194,7 @@ object HaskPlugin : PluginInitializer({
         completer.addCompleter(SimpleTypeCompleter)
         completer.addCompleter(ParameterizedADTCompleter)
         completer.addCompleter(TypeExpander.config.completer(CompletionStrategy.simple))
-        FXExpanderView(e, bundle, completer)
+        ExpanderControl(e, bundle, completer)
     }
     view { e: SimpleTypeEditor, bundle -> EditorControlWrapper(e, e.context.createView(e.name), bundle) }
     compoundView { e: FuncTypeEditor ->
@@ -289,13 +289,13 @@ object HaskPlugin : PluginInitializer({
     command<ExprEditor<*>>(open)
     command<ADTDefEditor>(save)
     command<ADTDefEditor>(open)
-    inspection(::unresolvedVariableInspection)
-    inspection(::typeParameterUnresolvedInspection)
-    inspection(::unresolvedADTInspection)
-    inspection<IdentifierEditor>(::invalidIdentifierInspection)
-    inspection<ValueOfEditor>(::invalidIdentifierInspection)
-    inspection(::invalidIntLiteralInspection)
-    inspection(::typeConstraintInspection)
-    inspection(::betaConversion)
+    inspection(unresolvedVariableInspection)
+    inspection(typeParameterUnresolvedInspection)
+    inspection(unresolvedADTInspection)
+    inspection<IdentifierEditor>(invalidIdentifierInspection)
+    inspection<ValueOfEditor>(invalidIdentifierInspection)
+    inspection(invalidIntLiteralInspection)
+    inspection(typeConstraintInspection)
+    inspection(betaConversion)
     stylesheet("hextant/hask/style.css")
 })

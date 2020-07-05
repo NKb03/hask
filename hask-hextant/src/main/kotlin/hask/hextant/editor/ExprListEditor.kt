@@ -5,7 +5,7 @@
 package hask.hextant.editor
 
 import hask.core.ast.Expr
-import hextant.Context
+import hextant.context.Context
 import hextant.core.editor.ListEditor
 
 class ExprListEditor(context: Context) : ListEditor<Expr, ExprExpander>(context) {

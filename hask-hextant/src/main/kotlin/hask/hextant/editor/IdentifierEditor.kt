@@ -5,7 +5,7 @@
 package hask.hextant.editor
 
 import hask.hextant.view.IdentifierEditorView
-import hextant.Context
+import hextant.context.Context
 import hextant.core.editor.TokenEditor
 import reaktive.value.now
 import validated.*

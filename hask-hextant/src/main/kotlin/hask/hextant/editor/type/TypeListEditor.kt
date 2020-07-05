@@ -5,7 +5,7 @@
 package hask.hextant.editor.type
 
 import hask.core.type.Type
-import hextant.Context
+import hextant.context.Context
 import hextant.core.editor.ListEditor
 
 class TypeListEditor(context: Context) : ListEditor<Type, TypeExpander>(context) {

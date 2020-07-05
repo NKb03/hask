@@ -8,7 +8,7 @@ import hask.core.ast.Pattern
 import hask.core.ast.Pattern.Wildcard
 import hask.core.parse.IDENTIFIER_REGEX
 import hask.hextant.ti.env.ADTDefinitions
-import hextant.Context
+import hextant.context.Context
 import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.ExpanderConfig
 import reaktive.set.ReactiveSet

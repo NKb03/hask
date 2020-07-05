@@ -5,9 +5,11 @@
 package hask.hextant
 
 import hask.hextant.editor.ExprExpander
-import hextant.*
 import hextant.command.Command.Type.SingleReceiver
 import hextant.command.command
+import hextant.context.createInput
+import hextant.context.createOutput
+import hextant.core.Editor
 import reaktive.value.now
 import java.nio.file.Paths
 

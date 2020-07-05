@@ -12,8 +12,8 @@ import hask.hextant.eval.EvaluationEnv.Resolution
 import hask.hextant.ti.DependencyGraph
 import hask.hextant.ti.LetTypeInference
 import hask.hextant.ti.env.TIContext
-import hextant.Context
-import hextant.base.CompoundEditor
+import hextant.context.Context
+import hextant.core.editor.CompoundEditor
 import hextant.core.editor.composeResult
 import reaktive.set.asSet
 import reaktive.value.now
