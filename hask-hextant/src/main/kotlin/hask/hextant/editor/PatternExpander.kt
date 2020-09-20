@@ -9,6 +9,7 @@ import hask.core.ast.Pattern.Wildcard
 import hask.core.parse.IDENTIFIER_REGEX
 import hask.hextant.ti.env.ADTDefinitions
 import hextant.context.Context
+import hextant.context.EditorControlGroup
 import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.ExpanderConfig
 import reaktive.set.ReactiveSet
@@ -30,7 +31,7 @@ class PatternExpander(context: Context) : ConfiguredExpander<Pattern, PatternEdi
         if (editor is DestructuringPatternEditor && editor.arguments.editors.now.isNotEmpty()) {
             views {
                 val arg = editor.arguments.editors.now.first()
-                val v = group.getViewOf(arg)
+                val v = context[EditorControlGroup].getViewOf(arg)
                 v.focus()
             }
         }

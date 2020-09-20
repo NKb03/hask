@@ -1,0 +1,8 @@
+{
+  "id": "hask",
+  "name": "Hask",
+  "author": "Nikolaus Knop",
+  "type": "Language",
+  "description": "Hextant Plugin for the Hask Language",
+  "initializer": "HaskPlugin"
+}

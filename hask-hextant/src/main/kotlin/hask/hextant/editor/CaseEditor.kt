@@ -14,7 +14,7 @@ import validated.reaktive.ReactiveValidated
 class CaseEditor(context: Context) : CompoundEditor<Pair<Pattern, Expr>>(context) {
     val pattern by child(PatternExpander(context))
 
-    val body by child(ExprExpander(context.withTIContext { it.child() }))
+    val body by child(ExprExpander(Util.withTIContext(context) { it.child() }))
 
     override val result: ReactiveValidated<Pair<Pattern, Expr>> = composeResult(pattern, body)
 }

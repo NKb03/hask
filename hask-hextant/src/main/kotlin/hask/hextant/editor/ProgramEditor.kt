@@ -8,9 +8,12 @@ import hask.core.ast.Program
 import hask.hextant.context.HaskInternal
 import hask.hextant.ti.env.ADTDefinitions
 import hask.hextant.ti.env.TIContext
+import hextant.codegen.ProvideProjectType
 import hextant.context.Context
+import hextant.core.Editor
 import hextant.core.editor.CompoundEditor
 import hextant.core.editor.composeResult
+import hextant.project.ProjectType
 import validated.reaktive.ReactiveValidated
 
 class ProgramEditor(context: Context) : CompoundEditor<Program>(context) {
@@ -25,4 +28,13 @@ class ProgramEditor(context: Context) : CompoundEditor<Program>(context) {
     }
 
     override val result: ReactiveValidated<Program> = composeResult(adtDefs, expr)
+
+    @ProvideProjectType("Hask Project")
+    companion object : ProjectType {
+        override fun initializeContext(context: Context) {
+            context[HaskInternal, TIContext] = TIContext.root()
+        }
+
+        override fun createProject(context: Context): Editor<*> = ProgramEditor(context)
+    }
 }

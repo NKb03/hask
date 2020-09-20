@@ -22,7 +22,7 @@ import validated.reaktive.ReactiveValidated
 
 class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let> {
     val bindings by child(BindingListEditor(context))
-    val body by child(ExprExpander(context.withTIContext { it.copy(env = it.env.child()) }))
+    val body by child(ExprExpander(Util.withTIContext(context) { it.copy(env = it.env.child()) }))
 
     override val result: ReactiveValidated<Let> = composeResult(bindings, body)
     override fun collectReferences(variable: String, acc: MutableCollection<ValueOfEditor>) {

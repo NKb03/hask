@@ -1,15 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <bytecodeTargetLevel target="1.8">
-      <module name="hask.hask.main" target="1.8" />
-      <module name="hask.hask.test" target="1.8" />
-      <module name="hask.org.hextant.main" target="1.8" />
-      <module name="hask.org.hextant.test" target="1.8" />
-      <module name="org.hextant.hask-constraints.main" target="1.8" />
-      <module name="org.hextant.hask-constraints.test" target="1.8" />
-      <module name="org.hextant.hask.main" target="1.8" />
-      <module name="org.hextant.hask.test" target="1.8" />
-    </bytecodeTargetLevel>
+    <bytecodeTargetLevel target="1.8" />
   </component>
 </project>

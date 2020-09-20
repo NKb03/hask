@@ -7,6 +7,7 @@ package hask.hextant.editor
 import hask.core.ast.Expr
 import hask.core.parse.IDENTIFIER_REGEX
 import hask.core.rt.*
+import hask.core.type.TopLevelEnv
 import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.ti.ExpanderTypeInference
@@ -14,6 +15,7 @@ import hask.hextant.ti.env.TIContext
 import hextant.command.Command.Type.SingleReceiver
 import hextant.command.meta.ProvideCommand
 import hextant.context.Context
+import hextant.context.EditorControlGroup
 import hextant.core.editor.*
 import hextant.undo.compoundEdit
 import reaktive.set.binding.flattenToSet
@@ -39,19 +41,17 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
             if (args.isNotEmpty() && applied.map { !it.containsHoles() }.ifInvalid { false }) {
                 val e = args.first()
                 views {
-                    group.getViewOf(e).focus()
+                    context[EditorControlGroup].getViewOf(e).focus()
                 }
             }
         }
         if (this.inference.isActive) {
-            //println("expanded, activating ${editor.result.now}")
             editor.inference.activate()
         }
     }
 
     override fun onReset(editor: ExprEditor<Expr>) {
         if (this.inference.isActive) {
-            //println("reset, deactivating ${editor.result.now}")
             editor.inference.dispose()
         }
     }
@@ -70,7 +70,7 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
         }
         val arg1 = apply.arguments.editors.now.first()
         views {
-            val view = group.getViewOf(arg1)
+            val view = context[EditorControlGroup].getViewOf(arg1)
             view.focus()
         }
     }
@@ -89,7 +89,7 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
     fun evaluateOnce() {
         val e = result.now.ifInvalid { return }
         saveSnapshot()
-        val env = buildEnv()
+        val env = Util.buildEnv(this)
         val r = e.evaluateOnce(env)
         if (r != null) reconstruct(r)
     }
@@ -104,7 +104,9 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
         saveSnapshot()
         val e = result.now.ifInvalid { return }
         val f = StackFrame.root()
-        val env = buildEnv()
+        val adts = Util.getProgram(this).adtDefs.results.now.mapNotNull { it.orNull() }
+        TopLevelEnv(adts).putConstructorFunctions(f)
+        val env = Util.buildEnv(this)
         for ((n, v) in env) f.put(n, v.eval(f))
         val r = e.force(f)
         reconstruct(r.toExpr(env.keys))
@@ -142,19 +144,19 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
 
     companion object {
         val config = ExpanderConfig<ExprEditor<Expr>>().apply {
-            registerConstant("let") { LetEditor(it) }
-            registerConstant("apply") { ApplyEditor(it) }
-            registerConstant("dec") { IntLiteralEditor(it) }
-            registerConstant("lambda") { LambdaEditor(it) }
-            registerConstant("get") { ValueOfEditor(it) }
-            registerConstant("if") { IfEditor(it) }
-            registerConstant("match") { MatchEditor(it) }
+            "let" expand ::LetEditor
+            "apply" expand ::ApplyEditor
+            "dec" expand ::IntLiteralEditor
+            "lambda" expand ::LambdaEditor
+            "get" expand ::ValueOfEditor
+            "if" expand ::IfEditor
+            "match" expand ::MatchEditor
             registerInterceptor { text, context ->
                 val asInt = text.toIntOrNull()
                 when {
                     asInt != null                  -> IntLiteralEditor(context, text)
                     text.matches(IDENTIFIER_REGEX) -> ValueOfEditor(context, text)
-                    text.endsWith("_") -> {
+                    text.endsWith("_")             -> {
                         val i = text.indexOf('_')
                         val name = text.take(i).trimEnd()
                         if (!name.matches(IDENTIFIER_REGEX)) null

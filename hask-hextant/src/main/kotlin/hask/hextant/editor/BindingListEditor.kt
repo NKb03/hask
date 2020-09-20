@@ -12,7 +12,7 @@ class BindingListEditor(context: Context) : ListEditor<Binding, BindingEditor>(c
     override fun createEditor(): BindingEditor? = BindingEditor(childContext())
 
     override fun childContext(): Context =
-        context.withTIContext { it.copy(unificator = it.unificator.child(), env = it.env.child()) }
+        Util.withTIContext(context) { it.copy(unificator = it.unificator.child(), env = it.env.child()) }
 
     override fun editorAdded(editor: BindingEditor, index: Int) {
         val p = parent

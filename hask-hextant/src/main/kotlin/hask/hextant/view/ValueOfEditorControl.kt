@@ -7,10 +7,15 @@ package hask.hextant.view
 import bundles.Bundle
 import hask.hextant.editor.ReferenceCompleter
 import hask.hextant.editor.ValueOfEditor
+import hextant.codegen.ProvideImplementation
+import hextant.context.ControlFactory
 import hextant.core.view.AbstractTokenEditorControl
 import javafx.css.PseudoClass
 
-class ValueOfEditorControl(editor: ValueOfEditor, args: Bundle) : AbstractTokenEditorControl(editor, args), ValueOfEditorView {
+class ValueOfEditorControl @ProvideImplementation(ControlFactory::class) constructor(
+    editor: ValueOfEditor,
+    args: Bundle
+) : AbstractTokenEditorControl(editor, args), ValueOfEditorView {
     init {
         arguments[COMPLETER] = ReferenceCompleter
         root.styleClass.add("reference")

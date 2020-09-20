@@ -4,7 +4,6 @@
 
 package hask.core.ast
 
-import hask.core.parse.IDENTIFIER_REGEX
 import hask.core.rt.NormalForm
 import hask.core.rt.Thunk
 import hask.core.type.Type
@@ -42,12 +41,12 @@ sealed class Expr {
         override fun toString(): String = buildString {
             append("match ")
             append(expr)
-            appendln(" with")
+            appendLine(" with")
             for ((pattern, body) in arms) {
                 append("  ")
                 append(pattern)
                 append(" -> ")
-                appendln(body)
+                appendLine(body)
             }
         }
     }

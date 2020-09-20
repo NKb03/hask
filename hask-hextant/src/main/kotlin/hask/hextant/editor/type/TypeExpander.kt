@@ -8,6 +8,7 @@ import hask.core.parse.IDENTIFIER_REGEX
 import hask.core.type.Type
 import hask.hextant.ti.env.ADTDefinitions
 import hextant.context.Context
+import hextant.context.EditorControlGroup
 import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.ExpanderConfig
 import reaktive.value.now
@@ -26,7 +27,7 @@ class TypeExpander(
                 editor.typeArguments.resize(adt.typeParameters.size)
                 val e = editor.typeArguments.editors.now.last()
                 views {
-                    group.getViewOf(e).focus()
+                    context[EditorControlGroup].getViewOf(e).focus()
                 }
             }
         }

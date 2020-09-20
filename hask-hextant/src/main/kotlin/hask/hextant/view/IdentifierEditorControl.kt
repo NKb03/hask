@@ -6,6 +6,8 @@ package hask.hextant.view
 
 import bundles.Bundle
 import hask.hextant.editor.IdentifierEditor
+import hextant.codegen.ProvideImplementation
+import hextant.context.ControlFactory
 import hextant.core.view.AbstractTokenEditorControl
 import hextant.fx.registerShortcuts
 import hextant.fx.shortcut
@@ -14,8 +16,11 @@ import javafx.scene.input.KeyCode.ENTER
 import javafx.scene.input.KeyCode.F2
 import reaktive.value.forEach
 
-class IdentifierEditorControl(editor: IdentifierEditor, args: Bundle) : AbstractTokenEditorControl(editor, args),
-                                                                        IdentifierEditorView {
+class IdentifierEditorControl @ProvideImplementation(ControlFactory::class) constructor(
+    editor: IdentifierEditor,
+    args: Bundle
+) : AbstractTokenEditorControl(editor, args),
+    IdentifierEditorView {
     private val highlighter = isSelected.forEach { selected ->
         if (selected) editor.highlightReferences()
         else editor.stopHighlightingReferences()

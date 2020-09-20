@@ -5,6 +5,7 @@
 package hask.hextant
 
 import hask.hextant.editor.ExprExpander
+import hask.hextant.editor.StringEditor
 import hextant.command.Command.Type.SingleReceiver
 import hextant.command.command
 import hextant.context.createInput
@@ -27,8 +28,8 @@ val save = command<Editor<*>, String> {
     shortName = "save"
     description = "Saves the selected editor to the specified file"
     type = SingleReceiver
-    addParameter {
-        ofType<String>()
+    addParameter<String> {
+        editWith<StringEditor>()
         name = "file"
         description = "The destination file"
     }
@@ -49,8 +50,8 @@ val open = command<Editor<*>, String> {
     shortName = "open"
     description = "Reads the selected editor from the specified file"
     type = SingleReceiver
-    addParameter {
-        ofType<String>()
+    addParameter<String> {
+        editWith<StringEditor>()
         name = "file"
         description = "The input file"
     }
