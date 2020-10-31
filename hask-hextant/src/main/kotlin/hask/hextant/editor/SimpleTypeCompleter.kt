@@ -1,10 +1,11 @@
 package hask.hextant.editor
 
 import hask.hextant.ti.env.ADTDefinitionEnv
-import hextant.context.Context
 import hextant.completion.CompletionStrategy
 import hextant.completion.ConfiguredCompleter
+import hextant.core.Editor
 
-object SimpleTypeCompleter : ConfiguredCompleter<Context, String>(CompletionStrategy.simple) {
-    override fun completionPool(context: Context): Collection<String> = context[ADTDefinitionEnv].availableTypes + "int"
+object SimpleTypeCompleter : ConfiguredCompleter<Editor<*>, String>(CompletionStrategy.simple) {
+    override fun completionPool(context: Editor<*>): Collection<String> =
+        context.context[ADTDefinitionEnv].availableTypes + "int"
 }

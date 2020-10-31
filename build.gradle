@@ -1,20 +1,19 @@
 plugins {
-    id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.4.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.4.10'
 }
 
 allprojects {
-    apply plugin: "java"
-    apply plugin: "org.jetbrains.kotlin.jvm"
-
-    group 'org.hextant'
+    apply plugin: 'kotlin'
+    group 'com.github.nkb03'
     version '1.0-SNAPSHOT'
 
     sourceCompatibility = 1.8
 
     repositories {
         mavenCentral()
-        mavenLocal()
+        maven {
+            url 'https://oss.sonatype.org/content/repositories/snapshots'
+        }
     }
 
     dependencies {

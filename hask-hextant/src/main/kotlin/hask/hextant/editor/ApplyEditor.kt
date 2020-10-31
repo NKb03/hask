@@ -12,6 +12,7 @@ import hask.hextant.context.HaskInternal
 import hask.hextant.ti.ApplyTypeInference
 import hask.hextant.ti.env.TIContext
 import hextant.context.Context
+import hextant.context.withoutUndo
 import hextant.core.editor.CompoundEditor
 import hextant.core.editor.composeResult
 import hextant.inspect.Inspections
@@ -26,7 +27,7 @@ class ApplyEditor(context: Context) : CompoundEditor<Apply>(context), ExprEditor
     val arguments by child(ExprListEditor(context))
 
     constructor(context: Context, left: ExprEditor<*>) : this(context) {
-        applied.setEditor(left, undoable = false)
+        withoutUndo { applied.setEditor(left) }
     }
 
     override val result: ReactiveValidated<Apply> = composeResult(applied, arguments)

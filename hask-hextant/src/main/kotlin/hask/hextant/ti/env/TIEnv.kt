@@ -8,10 +8,12 @@ import hask.core.ast.Builtin.Companion.BooleanT
 import hask.core.type.*
 import hask.core.type.Type.*
 import kollektion.Counter
-import reaktive.asValue
+import reaktive.map
 import reaktive.set.*
+import reaktive.set.binding.SetBinding
 import reaktive.value.*
-import reaktive.value.binding.*
+import reaktive.value.binding.or
+import reaktive.value.binding.orElse
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
@@ -81,7 +83,7 @@ class TIEnv(private val parent: TIEnv?) {
     fun generalize(t: Type): ReactiveValue<TypeScheme> {
         val fvs = unmodifiableReactiveSet(t.fvs())
         val typeParameters = fvs - this.freeTypeVars
-        return typeParameters.asValue().map { TypeScheme(it.now.toList(), t) }
+        return typeParameters.map { names: SetBinding<String> -> TypeScheme(names.now.toList(), t) }
     }
 
     fun clear() {

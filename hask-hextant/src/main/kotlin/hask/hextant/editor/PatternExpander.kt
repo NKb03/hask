@@ -39,11 +39,11 @@ class PatternExpander(context: Context) : ConfiguredExpander<Pattern, PatternEdi
 
     companion object {
         val config = ExpanderConfig<PatternEditor<*>>().apply {
-            registerConstant("_", ::WildcardPatternEditor)
-            registerConstant("wildcard", ::WildcardPatternEditor)
-            registerConstant("otherwise", ::WildcardPatternEditor)
-            registerConstant("destructuring", ::DestructuringPatternEditor)
-            registerConstant("var", ::VariablePatternEditor)
+            registerKey("_", ::WildcardPatternEditor)
+            registerKey("wildcard", ::WildcardPatternEditor)
+            registerKey("otherwise", ::WildcardPatternEditor)
+            registerKey("destructuring", ::DestructuringPatternEditor)
+            registerKey("var", ::VariablePatternEditor)
             registerInterceptor { text, context ->
                 if (!text.matches(IDENTIFIER_REGEX)) return@registerInterceptor null
                 if (text.first().isUpperCase()) {
@@ -51,8 +51,7 @@ class PatternExpander(context: Context) : ConfiguredExpander<Pattern, PatternEdi
                     val e = DestructuringPatternEditor(context, text)
                     e.arguments.resize(cstr.parameters.size)
                     e
-                }
-                else VariablePatternEditor(context, text)
+                } else VariablePatternEditor(context, text)
             }
             registerInterceptor { text, context ->
                 text.toIntOrNull()?.let { IntegerPatternEditor(context, text) }

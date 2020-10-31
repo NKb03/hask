@@ -2,17 +2,18 @@ package hask.hextant.editor
 
 import hask.core.ast.ADTConstructor
 import hask.hextant.ti.env.ADTDefinitions
-import hextant.context.Context
 import hextant.completion.Completion.Builder
 import hextant.completion.CompletionStrategy
 import hextant.completion.ConfiguredCompleter
+import hextant.core.Editor
 
-object DestructuringPatternCompleter : ConfiguredCompleter<Context, ADTConstructor>(CompletionStrategy.simple) {
-    override fun completionPool(context: Context): Collection<ADTConstructor> = context[ADTDefinitions].constructors()
+object DestructuringPatternCompleter : ConfiguredCompleter<Editor<*>, ADTConstructor>(CompletionStrategy.simple) {
+    override fun completionPool(context: Editor<*>): Collection<ADTConstructor> =
+        context.context[ADTDefinitions].constructors()
 
-    override fun extractText(context: Context, item: ADTConstructor): String? = item.name
+    override fun extractText(context: Editor<*>, item: ADTConstructor): String? = item.name
 
-    override fun Builder<ADTConstructor>.configure(context: Context) {
+    override fun Builder<ADTConstructor>.configure(context: Editor<*>) {
         infoText = completion.toString()
     }
 }

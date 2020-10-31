@@ -9,8 +9,8 @@ import hask.core.ast.Expr.*
 import hask.core.ast.Pattern.*
 import hask.core.rt.NormalForm.*
 import hask.core.rt.NormalForm.Function
-import hask.core.topologicalSort
 import hask.core.type.*
+import kollektion.graph.topologicalSort
 
 fun Expr.force(frame: StackFrame): NormalForm = when (this) {
     is IntLiteral   -> num?.let { IntValue(it) } ?: Irreducible(this)
@@ -126,9 +126,9 @@ fun Expr.evaluateOnce(env: Map<String, Expr>): Expr? = when (this) {
         }
         else       -> null
     }
-    is Let          -> {
+    is Let -> {
         val g = makeGraph(env.keys)
-        val ts = g.topologicalSort()
+        val ts = g.topologicalSort()!!
         val newEnv = mutableMapOf<String, Expr>()
         for (i in ts) {
             val (n, v) = bindings[i]

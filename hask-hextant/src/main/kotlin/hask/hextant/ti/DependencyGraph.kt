@@ -4,8 +4,8 @@
 
 package hask.hextant.ti
 
-import hask.core.*
 import kollektion.Cache
+import kollektion.graph.*
 import reaktive.event.unitEvent
 import reaktive.list.ReactiveList
 import reaktive.list.observeEach
@@ -24,15 +24,15 @@ class DependencyGraph(private val input: ReactiveList<Pair<ReactiveValidated<Str
 
     val boundVariables = input.asSet().map { (name, _) -> name.map { it.orNull() } }.values()
 
-    private val observer = input.observeEach { (n, v) ->
+    private val observer = input.observeEach { _, (n, v) ->
         n.observe { _ -> invalidate() } and v.observeSet { ch -> if (ch.element in boundVariables.now) invalidate() }
     } and input.observe { _ -> invalidate() }
     private val vertices = Cache { computeVertices() }
-    private val adjacencyList = Cache { computeAdjacencyList() }
+    private val adjacencyList = Cache { computeDependencyGraph() }
     private val condensedGraph = Cache { adjacencyList.get().condense() }
-    private val topologicalSorting = Cache { adjacencyList.get().topologicalSort() }
-
-    private val topologicallySortedSCCs = Cache { condensedGraph.get().topologicalSort() }
+    private val topologicalSorting = Cache { adjacencyList.get().topologicalSort()!! }
+    private val topologicallySortedSCCs =
+        Cache { condensedGraph.get().topologicalSort()!!.map { it.map { v -> v.index } } }
 
     private fun invalidate() {
         vertices.invalidate()
@@ -43,7 +43,7 @@ class DependencyGraph(private val input: ReactiveList<Pair<ReactiveValidated<Str
         invalidate.fire()
     }
 
-    private fun computeAdjacencyList(): List<List<Int>> {
+    private fun computeDependencyGraph(): IndexGraph {
         val index = vertices.get()
         val adj = List(input.now.size) { mutableListOf<Int>() }
         for (b in input.now) {
@@ -55,7 +55,7 @@ class DependencyGraph(private val input: ReactiveList<Pair<ReactiveValidated<Str
                 }
             }
         }
-        return adj
+        return createIndexGraph(adj)
     }
 
     private fun computeVertices(): Map<String, Int> {
@@ -76,6 +76,6 @@ class DependencyGraph(private val input: ReactiveList<Pair<ReactiveValidated<Str
         val v = vertices.get()
         val vertices = source.mapNotNull { name -> v[name] }
         val adj = adjacencyList.get()
-        return adj.hasCycle(vertices)
+        return adj.hasCycle(vertices.map(::IntegerVertex))
     }
 }

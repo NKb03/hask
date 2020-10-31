@@ -57,7 +57,7 @@ val betaConversion = inspection<ApplyEditor> {
             it.map { a -> a is Lambda }.ifInvalid { false }
         } and inspected.arguments.result.map { it.isValid }
     }
-    addFix("Replace all usages of abstracted variable by argument", eval, { inspected.expander!! })
+    addFix("Replace all usages of abstracted variable by argument", eval) { inspected.expander!! }
 }
 
 val typeParameterUnresolvedInspection = inspection<SimpleTypeEditor> {

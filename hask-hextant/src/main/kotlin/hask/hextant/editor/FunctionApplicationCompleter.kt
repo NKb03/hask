@@ -9,14 +9,14 @@ import hask.core.type.argumentsToSaturate
 import hask.hextant.context.HaskInternal
 import hask.hextant.editor.FunctionApplicationCompleter.ApplicationCompletion
 import hask.hextant.ti.env.TIContext
-import hextant.context.Context
 import hextant.completion.Completion.Builder
 import hextant.completion.CompletionStrategy
 import hextant.completion.ConfiguredCompleter
+import hextant.core.Editor
 
-object FunctionApplicationCompleter : ConfiguredCompleter<Context, ApplicationCompletion>(CompletionStrategy.simple) {
-    override fun completionPool(context: Context): Collection<ApplicationCompletion> {
-        val ctx = context[HaskInternal, TIContext]
+object FunctionApplicationCompleter : ConfiguredCompleter<Editor<*>, ApplicationCompletion>(CompletionStrategy.simple) {
+    override fun completionPool(context: Editor<*>): Collection<ApplicationCompletion> {
+        val ctx = context.context[HaskInternal, TIContext]
         return ctx.env.now.entries.flatMap { (name, type) ->
             val subst = ctx.unificator.root().substituteNow(type.body)
             val arguments = subst.argumentsToSaturate()
@@ -28,7 +28,7 @@ object FunctionApplicationCompleter : ConfiguredCompleter<Context, ApplicationCo
         override fun toString(): String = name + " _".repeat(arguments)
     }
 
-    override fun Builder<ApplicationCompletion>.configure(context: Context) {
-        infoText = context[HaskInternal, TIContext].displayTypeScheme(completion.type)
+    override fun Builder<ApplicationCompletion>.configure(context: Editor<*>) {
+        infoText = context.context[HaskInternal, TIContext].displayTypeScheme(completion.type)
     }
 }

@@ -16,6 +16,7 @@ import hextant.command.line.CommandLine
 import hextant.completion.CompletionStrategy
 import hextant.completion.CompoundCompleter
 import hextant.context.*
+import hextant.core.Editor
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.*
 import hextant.core.view.ListEditorControl.Orientation.Horizontal
@@ -93,7 +94,7 @@ fun createControl(editor: BindingListEditor, arguments: Bundle): ListEditorContr
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: ExprExpander, arguments: Bundle) = run {
-    val completer = CompoundCompleter<Context, Any>()
+    val completer = CompoundCompleter<Editor<*>, Any>()
     completer.addCompleter(ReferenceCompleter)
     completer.addCompleter(FunctionApplicationCompleter)
     completer.addCompleter(ExprExpander.config.completer(CompletionStrategy.simple))
@@ -135,7 +136,7 @@ fun createControl(editor: ExprExpander, arguments: Bundle) = run {
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: PatternExpander, arguments: Bundle): ExpanderControl {
-    val completer = CompoundCompleter<Context, Any>()
+    val completer = CompoundCompleter<Editor<*>, Any>()
     completer.addCompleter(PatternExpander.config.completer(CompletionStrategy.simple))
     completer.addCompleter(DestructuringPatternCompleter)
     return ExpanderControl(editor, arguments, completer)
@@ -216,7 +217,7 @@ fun createControl(editor: IfEditor, arguments: Bundle) = CompoundEditorControl(e
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: TypeExpander, arguments: Bundle): ExpanderControl {
-    val completer = CompoundCompleter<Context, Any>()
+    val completer = CompoundCompleter<Editor<*>, Any>()
     completer.addCompleter(SimpleTypeCompleter)
     completer.addCompleter(ParameterizedADTCompleter)
     completer.addCompleter(TypeExpander.config.completer(CompletionStrategy.simple))

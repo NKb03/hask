@@ -7,9 +7,8 @@ package hask.core.type
 import hask.core.ast.*
 import hask.core.ast.Expr.*
 import hask.core.ast.Pattern.*
-import hask.core.condense
-import hask.core.topologicalSort
 import hask.core.type.Type.*
+import kollektion.graph.*
 import java.util.*
 
 fun Expr.freeVariables(env: Set<String>, collect: MutableSet<String> = mutableSetOf()): Set<String> {
@@ -22,8 +21,8 @@ fun Expr.freeVariables(env: Set<String>, collect: MutableSet<String> = mutableSe
             function.freeVariables(env, collect)
             arguments.flatMap { arg -> arg.freeVariables(env, collect) }
         }
-        is Let          -> {
-            val env1 = env + bindings.mapTo(mutableSetOf<String>()) { it.name }
+        is Let -> {
+            val env1 = env + bindings.mapTo(mutableSetOf()) { it.name }
             bindings.forEach { (_, v) -> v.freeVariables(env1, collect) }
             body.freeVariables(env1, collect)
         }
@@ -59,16 +58,16 @@ fun Expr.inferType(
         constraints.bind(f, functionType(args, ret))
         ret
     }
-    is Let          -> {
+    is Let -> {
         val graph = makeGraph(env.keys)
         val env2 = env.toMutableMap()
-        for (comp in graph.condense().topologicalSort()) {
-            val typeVars = comp.associate { i -> bindings[i].name to Var(namer.freshName()) }
+        for (comp in graph.condense().topologicalSort()!!) {
+            val typeVars = comp.associate { i -> bindings[i.index].name to Var(namer.freshName()) }
             val env1 = env2 + typeVars.mapValues { (_, t) -> TypeScheme(emptyList(), t) }
             val c = mutableListOf<Constraint>()
             val t = mutableMapOf<String, Type>()
             for (i in comp) {
-                val (name, value) = bindings[i]
+                val (name, value) = bindings[i.index]
                 val defTypeVar = typeVars.getValue(name)
                 val type = value.inferType(env1, namer, c, tl)
                 c.bind(defTypeVar, type)
@@ -113,7 +112,7 @@ fun Expr.inferType(
     is Expr.Hole    -> Type.Hole
 }
 
-fun Let.makeGraph(boundVars: Set<String>): List<MutableList<Int>> {
+fun Let.makeGraph(boundVars: Set<String>): IndexGraph {
     val vertices = bindings.withIndex().associate { (idx, b) -> b.name to idx }
     val graph = List(bindings.size) { mutableListOf<Int>() }
     for ((i, b) in bindings.withIndex()) {
@@ -122,7 +121,7 @@ fun Let.makeGraph(boundVars: Set<String>): List<MutableList<Int>> {
             graph[j].add(i)
         }
     }
-    return graph
+    return createIndexGraph(graph)
 }
 
 fun functionType(parameters: List<Type>, returnType: Type) =

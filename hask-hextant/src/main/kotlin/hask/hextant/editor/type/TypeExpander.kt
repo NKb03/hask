@@ -37,10 +37,10 @@ class TypeExpander(
 
     companion object {
         val config = ExpanderConfig<TypeEditor>().apply {
-            registerConstant("->") { FuncTypeEditor(it) }
-            registerConstant("function") { FuncTypeEditor(it) }
-            registerConstant("adt") { ParameterizedADTEditor(it) }
-            registerConstant("int") { SimpleTypeEditor(it, "int") }
+            "->" expand ::FuncTypeEditor
+            "function" expand ::FuncTypeEditor
+            "adt" expand ::ParameterizedADTEditor
+            "int" expand { SimpleTypeEditor(it, "int") }
             registerInterceptor { text, context ->
                 if (IDENTIFIER_REGEX.matches(text)) SimpleTypeEditor(context, text) else null
             }
