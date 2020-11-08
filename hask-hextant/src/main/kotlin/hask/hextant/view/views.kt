@@ -261,7 +261,7 @@ fun createControl(editor: ADTEditor, arguments: Bundle) = CompoundEditorControl(
         keyword("data ")
         view(editor.name).root.styleClass.add("adt-name")
         view(editor.parameters) {
-            //            set(Companion.ORIENTATION, Horizontal)
+            set(Companion.ORIENTATION, Horizontal)
         }
     }
     styleClass.add("adt")
