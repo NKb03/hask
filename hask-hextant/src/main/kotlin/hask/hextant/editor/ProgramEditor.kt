@@ -4,8 +4,8 @@
 
 package hask.hextant.editor
 
+import bundles.set
 import hask.core.ast.Program
-import hask.hextant.context.HaskInternal
 import hask.hextant.ti.env.ADTDefinitions
 import hask.hextant.ti.env.TIContext
 import hextant.codegen.ProvideProjectType
@@ -21,7 +21,7 @@ class ProgramEditor(context: Context) : CompoundEditor<Program>(context) {
     val expr by child(ExprExpander(context))
 
     private val defs = ADTDefinitions(adtDefs.editors)
-    private val observer = defs.bindConstructors(context[HaskInternal, TIContext].env)
+    private val observer = defs.bindConstructors(context[TIContext].env)
 
     init {
         context[ADTDefinitions] = defs
@@ -32,7 +32,7 @@ class ProgramEditor(context: Context) : CompoundEditor<Program>(context) {
     @ProvideProjectType("Hask Project")
     companion object : ProjectType {
         override fun initializeContext(context: Context) {
-            context[HaskInternal, TIContext] = TIContext.root()
+            context[TIContext] = TIContext.root()
         }
 
         override fun createProject(context: Context): Editor<*> = ProgramEditor(context)

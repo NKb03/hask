@@ -5,15 +5,14 @@
 package hask.hextant.editor
 
 import hask.core.ast.Expr.IntLiteral
-import hask.core.ast.l
-import hask.hextant.context.HaskInternal
 import hask.hextant.ti.IntLiteralTypeInference
 import hask.hextant.ti.env.TIContext
 import hextant.context.Context
 import hextant.core.editor.TokenEditor
 import hextant.core.view.TokenEditorView
 import reaktive.set.emptyReactiveSet
-import validated.*
+import validated.Validated
+import validated.valid
 
 class IntLiteralEditor(context: Context, text: String) : TokenEditor<IntLiteral, TokenEditorView>(context, text),
                                                          ExprEditor<IntLiteral> {
@@ -25,5 +24,5 @@ class IntLiteralEditor(context: Context, text: String) : TokenEditor<IntLiteral,
 
     override val freeVariables = emptyReactiveSet<String>()
 
-    override val inference = IntLiteralTypeInference(context[HaskInternal, TIContext])
+    override val inference = IntLiteralTypeInference(context[TIContext])
 }

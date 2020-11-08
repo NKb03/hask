@@ -4,5 +4,10 @@
   "author": "Nikolaus Knop",
   "type": "Language",
   "description": "Hextant Plugin for the Hask Language",
+  "dependencies": [
+    {
+      "id": "core"
+    }
+  ],
   "initializer": "HaskPlugin"
 }

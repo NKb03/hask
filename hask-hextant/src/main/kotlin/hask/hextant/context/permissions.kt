@@ -4,6 +4,8 @@
 
 package hask.hextant.context
 
-sealed class HaskInternal {
-    internal companion object: HaskInternal()
+import bundles.Permission
+
+sealed class HaskInternal : Permission("hask.internal") {
+    internal companion object : HaskInternal()
 }

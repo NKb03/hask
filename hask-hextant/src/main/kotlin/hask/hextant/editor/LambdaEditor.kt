@@ -6,7 +6,6 @@ package hask.hextant.editor
 
 import hask.core.ast.Expr
 import hask.core.ast.Expr.Lambda
-import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.eval.EvaluationEnv.Resolution.Parameter
 import hask.hextant.ti.LambdaTypeInference
@@ -35,7 +34,7 @@ class LambdaEditor(context: Context) : CompoundEditor<Lambda>(context), ExprEdit
     override val freeVariables = body.freeVariables - parameters.results.asSet().map { it.orNull() }
 
     override val inference = LambdaTypeInference(
-        context[HaskInternal, TIContext],
+        context[TIContext],
         parameters.results,
         body.inference
     )

@@ -7,7 +7,6 @@ package hask.hextant
 import hask.core.ast.Expr.Lambda
 import hask.core.parse.IDENTIFIER_REGEX
 import hask.core.type.Type.Var
-import hask.hextant.context.HaskInternal
 import hask.hextant.editor.*
 import hask.hextant.editor.type.ParameterizedADTEditor
 import hask.hextant.editor.type.SimpleTypeEditor
@@ -25,7 +24,7 @@ val unresolvedVariableInspection = inspection<ValueOfEditor> {
     description = "Reports unresolved variables"
     isSevere(true)
     checkingThat {
-        val ctx = inspected.context[HaskInternal, TIContext]
+        val ctx = inspected.context[TIContext]
         inspected.result.flatMap { r ->
             r.fold(
                 onValid = { ctx.env.isResolved(it.name) },

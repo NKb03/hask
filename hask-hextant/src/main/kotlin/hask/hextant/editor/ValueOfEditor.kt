@@ -6,7 +6,6 @@ package hask.hextant.editor
 
 import hask.core.ast.Expr
 import hask.core.ast.Expr.ValueOf
-import hask.hextant.context.HaskInternal
 import hask.hextant.ti.ReferenceTypeInference
 import hask.hextant.ti.env.TIContext
 import hask.hextant.view.ValueOfEditorView
@@ -24,7 +23,7 @@ class ValueOfEditor(context: Context, text: String) : TokenEditor<ValueOf, Value
     override val freeVariables = result.map { it.orNull()?.name }.toSet()
 
     override val inference = ReferenceTypeInference(
-        context[HaskInternal, TIContext],
+        context[TIContext],
         result.map { r -> r.map { it.name } }
     )
 

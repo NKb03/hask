@@ -8,7 +8,6 @@ import hask.core.ast.Expr
 import hask.core.parse.IDENTIFIER_REGEX
 import hask.core.rt.*
 import hask.core.type.TopLevelEnv
-import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.ti.ExpanderTypeInference
 import hask.hextant.ti.env.TIContext
@@ -16,7 +15,10 @@ import hextant.command.Command.Type.SingleReceiver
 import hextant.command.meta.ProvideCommand
 import hextant.context.Context
 import hextant.context.EditorControlGroup
-import hextant.core.editor.*
+import hextant.core.editor.ConfiguredExpander
+import hextant.core.editor.ExpanderConfig
+import hextant.serial.Snapshot
+import hextant.serial.snapshot
 import hextant.undo.compoundEdit
 import reaktive.set.binding.flattenToSet
 import reaktive.set.emptyReactiveSet
@@ -32,7 +34,7 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
 
     override val freeVariables = editor.map { it?.freeVariables ?: emptyReactiveSet() }.flattenToSet()
 
-    private val evalStack: Deque<EditorSnapshot<ExprEditor<Expr>>> = LinkedList()
+    private val evalStack: Deque<Snapshot<ExprEditor<Expr>>> = LinkedList()
 
     override fun onExpansion(editor: ExprEditor<Expr>) {
         if (editor is ApplyEditor) {
@@ -58,7 +60,7 @@ class ExprExpander(context: Context, initial: ExprEditor<*>?) :
 
     override fun defaultResult(): Validated<Expr> = valid(Expr.Hole)
 
-    override val inference = ExpanderTypeInference(context[HaskInternal, TIContext], editor.map { it?.inference })
+    override val inference = ExpanderTypeInference(context[TIContext], editor.map { it?.inference })
 
     @ProvideCommand(shortName = "apply", type = SingleReceiver)
     fun wrapInApply() {

@@ -4,6 +4,7 @@
 
 package hask.hextant.editor
 
+import bundles.set
 import hask.core.ast.ADTDef
 import hask.hextant.ti.env.ADTDefinitionEnv
 import hextant.context.Context

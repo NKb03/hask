@@ -4,8 +4,8 @@
 
 package hask.hextant.editor
 
+import bundles.set
 import hask.core.ast.Expr
-import hask.hextant.context.HaskInternal
 import hask.hextant.ti.TypeInference
 import hask.hextant.ti.env.TIContext
 import hextant.context.Context
@@ -16,7 +16,7 @@ import validated.ifValid
 
 object Util {
     fun withTIContext(context: Context, create: (TIContext) -> TIContext): Context = context.extend {
-        set(HaskInternal, TIContext, create(get(HaskInternal, TIContext)))
+        set(TIContext, create(get(TIContext)))
     }
 
     fun buildEnv(editor: ExprEditor<*>): Map<String, Expr> {

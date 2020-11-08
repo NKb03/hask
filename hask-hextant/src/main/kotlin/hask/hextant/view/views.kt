@@ -5,9 +5,9 @@
 package hask.hextant.view
 
 import bundles.Bundle
+import bundles.set
 import hask.core.rt.evaluate
 import hask.core.type.TopLevelEnv
-import hask.hextant.context.HaskInternal
 import hask.hextant.editor.*
 import hask.hextant.editor.type.*
 import hask.hextant.ti.env.TIContext
@@ -104,7 +104,7 @@ fun createControl(editor: ExprExpander, arguments: Bundle) = run {
             on("Ctrl+Shift+V") { editor.wrapInLet() }
             on("Ctrl+T") {
                 val type = editor.type.now
-                val ti = editor.context[HaskInternal, TIContext]
+                val ti = editor.context[TIContext]
                 val txt = ti.displayType(type)
                 PopOver(Text(txt)).run {
                     isHideOnEscape = true
@@ -261,7 +261,7 @@ fun createControl(editor: ADTEditor, arguments: Bundle) = CompoundEditorControl(
         keyword("data ")
         view(editor.name).root.styleClass.add("adt-name")
         view(editor.parameters) {
-            set(Companion.ORIENTATION, Horizontal)
+            //            set(Companion.ORIENTATION, Horizontal)
         }
     }
     styleClass.add("adt")
@@ -295,7 +295,7 @@ fun createControl(editor: ADTDefEditor, arguments: Bundle) = CompoundEditorContr
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: ProgramEditor, arguments: Bundle) = CompoundEditorControl(editor, arguments) {
     val context = editor.context
-    val ti = context[HaskInternal, TIContext]
+    val ti = context[TIContext]
     val unificator = ti.unificator
     editor.expr.inference.activate()
     setPrefSize(854.0, 480.0)

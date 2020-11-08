@@ -8,11 +8,12 @@ import hask.hextant.editor.ExprExpander
 import hask.hextant.editor.StringEditor
 import hextant.command.Command.Type.SingleReceiver
 import hextant.command.command
-import hextant.context.createInput
-import hextant.context.createOutput
 import hextant.core.Editor
+import hextant.serial.Snapshot
+import hextant.serial.saveSnapshotAsJson
+import kotlinx.serialization.json.Json
 import reaktive.value.now
-import java.nio.file.Paths
+import java.io.File
 
 val eval = command<ExprExpander, Unit> {
     name = "eval"
@@ -34,12 +35,10 @@ val save = command<Editor<*>, String> {
         description = "The destination file"
     }
     executing { editor, args ->
-        val file = args[0] as String
-        val path = Paths.get(file)
-        val output = editor.context.createOutput(path)
+        val file = File(args[0] as String)
         try {
-            output.writeUntyped(editor)
-            "Successfully saved to $path"
+            editor.saveSnapshotAsJson(file)
+            "Successfully saved to $file"
         } catch (ex: Throwable) {
             ex.message?.let { "Failure: $it" } ?: "Unknown error"
         }
@@ -56,12 +55,12 @@ val open = command<Editor<*>, String> {
         description = "The input file"
     }
     executing { editor, args ->
-        val file = args[0] as String
-        val path = Paths.get(file)
-        val input = editor.context.createInput(path)
+        val file = File(args[0] as String)
         try {
-            input.readInplace(editor)
-            "Successfully read from $path"
+            val json = Json.parseToJsonElement(file.readText())
+            val snapshot = Snapshot.decode<Editor<*>>(json)
+            snapshot.reconstruct(editor)
+            "Successfully read from $file"
         } catch (ex: Throwable) {
             ex.message?.let { "Failure: $it" } ?: "Unknown error"
         }

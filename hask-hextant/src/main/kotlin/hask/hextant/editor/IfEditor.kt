@@ -6,7 +6,6 @@ package hask.hextant.editor
 
 import hask.core.ast.Expr
 import hask.core.ast.Expr.If
-import hask.hextant.context.HaskInternal
 import hask.hextant.ti.IfTypeInference
 import hask.hextant.ti.env.TIContext
 import hextant.context.Context
@@ -39,7 +38,7 @@ class IfEditor(
     override val freeVariables = condition.freeVariables + ifTrue.freeVariables + ifFalse.freeVariables
 
     override val inference = IfTypeInference(
-        context[HaskInternal, TIContext],
+        context[TIContext],
         condition.inference,
         ifTrue.inference,
         ifFalse.inference

@@ -6,7 +6,6 @@ package hask.hextant.editor
 
 import hask.core.ast.Expr
 import hask.core.ast.Expr.Let
-import hask.hextant.context.HaskInternal
 import hask.hextant.eval.EvaluationEnv
 import hask.hextant.eval.EvaluationEnv.Resolution
 import hask.hextant.ti.DependencyGraph
@@ -40,7 +39,7 @@ class LetEditor(context: Context) : CompoundEditor<Let>(context), ExprEditor<Let
         .flatMap { it.value.freeVariables } + body.freeVariables - dependencyGraph.boundVariables
 
     override val inference = LetTypeInference(
-        context[HaskInternal, TIContext],
+        context[TIContext],
         ::bindings,
         dependencyGraph,
         body.inference

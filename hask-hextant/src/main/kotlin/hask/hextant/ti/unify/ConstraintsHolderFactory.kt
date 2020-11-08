@@ -5,6 +5,7 @@
 package hask.hextant.ti.unify
 
 import bundles.Property
+import bundles.property
 import hask.hextant.context.HaskInternal
 
 interface ConstraintsHolderFactory {
@@ -22,7 +23,7 @@ interface ConstraintsHolderFactory {
             UnifyingConstraintsHolder(unificator)
     }
 
-    companion object: Property<ConstraintsHolderFactory, HaskInternal, HaskInternal>("constraints holder factory") {
+    companion object : Property<ConstraintsHolderFactory, HaskInternal> by property("constraints holder factory") {
         fun collecting(dest: MutableCollection<Constraint>): ConstraintsHolderFactory =
             Collecting(dest)
 

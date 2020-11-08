@@ -4,7 +4,8 @@
 
 package hask.hextant.ti.env
 
-import bundles.SimpleProperty
+import bundles.PublicProperty
+import bundles.property
 import reaktive.collection.binding.contains
 import reaktive.set.ReactiveSet
 
@@ -13,5 +14,5 @@ class ADTDefinitionEnv(private val typeParameters: ReactiveSet<String>) {
 
     fun isResolved(name: String) = typeParameters.contains(name)
 
-    companion object : SimpleProperty<ADTDefinitionEnv>("adt definition env")
+    companion object : PublicProperty<ADTDefinitionEnv> by property("adt definition env")
 }

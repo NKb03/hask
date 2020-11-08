@@ -8,7 +8,6 @@ import hask.core.ast.Builtin
 import hask.core.ast.Expr
 import hask.core.ast.Expr.Apply
 import hask.core.rt.isNormalForm
-import hask.hextant.context.HaskInternal
 import hask.hextant.ti.ApplyTypeInference
 import hask.hextant.ti.env.TIContext
 import hextant.context.Context
@@ -35,7 +34,7 @@ class ApplyEditor(context: Context) : CompoundEditor<Apply>(context), ExprEditor
     override val freeVariables = applied.freeVariables + arguments.editors.asSet().flatMap { it.freeVariables }
 
     override val inference = ApplyTypeInference(
-        context[HaskInternal, TIContext],
+        context[TIContext],
         applied.inference,
         arguments.editors.map { it.inference }
     )

@@ -5,6 +5,7 @@
 package hask.hextant.view
 
 import bundles.Bundle
+import bundles.set
 import hask.hextant.editor.ReferenceCompleter
 import hask.hextant.editor.ValueOfEditor
 import hextant.codegen.ProvideImplementation

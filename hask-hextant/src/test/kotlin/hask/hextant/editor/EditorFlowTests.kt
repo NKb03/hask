@@ -4,6 +4,7 @@
 
 package hask.hextant.editor
 
+import bundles.set
 import com.natpryce.hamkrest.should.shouldMatch
 import hask.core.ast.Builtin.Companion.BooleanT
 import hask.core.type.Type.Func
@@ -35,7 +36,7 @@ class EditorFlowTests {
     fun `use id function for different types`() {
         val ti = TIContext.root()
         val context = testingContext {
-            set(HaskInternal, TIContext, ti)
+            set(TIContext, ti)
             set(
                 HaskInternal,
                 ConstraintsHolderFactory, ConstraintsHolderFactory.unifying(ti.unificator)
@@ -69,7 +70,7 @@ class EditorFlowTests {
     fun `use id in value of let binding`() {
         val ti = TIContext.root()
         val context = testingContext {
-            set(HaskInternal, TIContext, ti)
+            set(TIContext, ti)
             set(
                 HaskInternal,
                 ConstraintsHolderFactory, ConstraintsHolderFactory.unifying(ti.unificator)
@@ -107,7 +108,7 @@ class EditorFlowTests {
     fun `eq 1 should not be an error`() {
         val ti = TIContext.root()
         val context = testingContext {
-            set(HaskInternal, TIContext, ti)
+            set(TIContext, ti)
             set(
                 HaskInternal,
                 ConstraintsHolderFactory, ConstraintsHolderFactory.unifying(ti.unificator)

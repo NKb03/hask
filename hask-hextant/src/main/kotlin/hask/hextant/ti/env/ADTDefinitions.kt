@@ -4,7 +4,8 @@
 
 package hask.hextant.ti.env
 
-import bundles.SimpleProperty
+import bundles.PublicProperty
+import bundles.property
 import hask.core.ast.*
 import hask.core.type.Type.ParameterizedADT
 import hask.core.type.Type.Var
@@ -26,6 +27,10 @@ import reaktive.value.binding.flatMap
 import reaktive.value.reactiveValue
 import validated.*
 import validated.reaktive.ReactiveValidated
+import kotlin.collections.Collection
+import kotlin.collections.map
+import kotlin.collections.mutableSetOf
+import kotlin.collections.set
 
 class ADTDefinitions(editors: ReactiveList<ADTDefEditor>) {
     private val results = editors.map { it.result }.values()
@@ -85,5 +90,5 @@ class ADTDefinitions(editors: ReactiveList<ADTDefEditor>) {
         return TypeScheme(params, functionType(cstr.parameters, t))
     }
 
-    companion object : SimpleProperty<ADTDefinitions>("ast definitions")
+    companion object : PublicProperty<ADTDefinitions> by property("ast definitions")
 }
